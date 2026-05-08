@@ -1,72 +1,106 @@
 import greenfoot.*;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 public class PlayingState implements GameState {
 
-    /** Track UI elements so we can remove them cleanly on exit */
     private List<Actor> uiElements = new ArrayList<>();
-
-    /** Score display label */
-    private UIText scoreDisplay;
-
-    /** Tracks when this session started (for playtime saving) */
+    private UIText waveDisplay; 
+    private UIText goldDisplay;
     private long sessionStartTime;
+
+    private WaveManager waveManager;
+    private PlacementManager placementManager;
+    private Base base; // Store reference to Base to show lives
 
     @Override
     public void enter(MyWorld world) {
-        // ── Reset everything ──────────────────────────────────────────────────
-        world.removeObjects(world.getObjects(null)); // clear all actors
+        world.removeObjects(world.getObjects(null)); 
         ScoreManager.reset();
         sessionStartTime = System.currentTimeMillis();
 
-        // ── Background ────────────────────────────────────────────────────────
         world.setBackground(new GreenfootImage(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
         world.getBackground().setColor(new Color(30, 30, 50));
         world.getBackground().fill();
 
-        // ── Spawn the player ──────────────────────────────────────────────────
-        Player player = new Player();
-        world.addObject(player, world.getWidth() / 2, world.getHeight() / 2);
+        // Spawn Base
+        base = new Base();
+        GreenfootImage baseImg = new GreenfootImage(50, GameConfig.WORLD_HEIGHT);
+        baseImg.setColor(Color.BLUE);
+        baseImg.fillRect(0, 0, 50, GameConfig.WORLD_HEIGHT);
+        base.setImage(baseImg);
+        world.addObject(base, GameConfig.BASE_X, GameConfig.WORLD_HEIGHT / 2);
 
-        // ── UI ────────────────────────────────────────────────────────────────
-        scoreDisplay = new UIText("SCORE: 0", GameConfig.s(22), Color.WHITE);
-        world.addObject(scoreDisplay, GameConfig.s(60), GameConfig.s(20));
-        uiElements.add(scoreDisplay);
+        // Initialize Managers
+        LaneManager.reset();
+        CurrencyManager.reset();
+        waveManager = new WaveManager();
+        placementManager = new PlacementManager();
 
-        // ── Music ─────────────────────────────────────────────────────────────
-        // AudioManager.playLoop("game_bgm");
+        // Start the game!
+        waveManager.startFirstWave();
 
-        // ── Seed the random number generator ─────────────────────────────────
+        // UI
+        waveDisplay = new UIText("WAVE: 1", GameConfig.s(22), Color.WHITE);
+        goldDisplay = new UIText("GOLD: " + CurrencyManager.getGold(), GameConfig.s(22), Color.YELLOW);
+        
+        world.addObject(waveDisplay, GameConfig.s(80), GameConfig.s(20));
+        world.addObject(goldDisplay, GameConfig.s(300), GameConfig.s(20));
+        
+        uiElements.add(waveDisplay);
+        uiElements.add(goldDisplay);
+        
+        createUnitMenu(world);
         GameRNG.randomize();
     }
 
     @Override
     public void update(MyWorld world) {
-        // Update the score display every frame
-        scoreDisplay.setText("SCORE: " + ScoreManager.getScore());
+        // Run game logic
+        waveManager.update(world);
+        placementManager.update(world);
 
-        // Add your per-frame gameplay logic here:
-        // - Spawning enemies
-        // - Difficulty scaling
-        // - Checking win/lose conditions
+        // Update UI displays
+        waveDisplay.setText("WAVE: " + waveManager.getWaveNumber() + " | LIVES: " + base.lives);
+        goldDisplay.setText("GOLD: " + CurrencyManager.getGold());
+        
+        // If Base dies, Game Over
+        if (base.lives <= 0) {
+            world.getGSM().changeState(new GameOverState());
+        }
     }
-
+    
     @Override
     public void exit(MyWorld world) {
-        // Save playtime
         long playedMs = System.currentTimeMillis() - sessionStartTime;
-        int playedSeconds = (int)(playedMs / 1000);
-        SaveManager.addInt("total_playtime", playedSeconds);
-        SaveManager.save();
-
-        // Update high score
+        SaveManager.addInt("total_playtime", (int)(playedMs / 1000));
         ScoreManager.updateHighScore();
 
-        // Remove UI
         world.removeObjects(uiElements);
         uiElements.clear();
-
-        // AudioManager.stop("game_bgm");
+    }
+    
+    private void createUnitMenu(MyWorld world) {
+        // Data definition: {ID, Cost, Color, Key}
+        Object[][] menuData = {
+            {1, GameConfig.BASIC_UNIT_COST, Color.GREEN, "1"},
+            {2, GameConfig.SNIPER_UNIT_COST, Color.MAGENTA, "2"}
+        };
+    
+        int startX = GameConfig.s(40);
+        int startY = GameConfig.s(100);
+        int spacing = GameConfig.s(70);
+    
+        for (int i = 0; i < menuData.length; i++) {
+            UIUnitCard card = new UIUnitCard(
+                (int)menuData[i][0], 
+                (int)menuData[i][1], 
+                (Color)menuData[i][2], 
+                (String)menuData[i][3], 
+                placementManager
+            );
+            world.addObject(card, startX, startY + (i * spacing));
+            uiElements.add(card);
+        }
     }
 }
