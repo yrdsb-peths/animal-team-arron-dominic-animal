@@ -41,9 +41,6 @@ public class WaveManager {
     // CONFIGURATION
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Seconds between individual enemy spawns within a wave.(to be changed!) */
-    private static double SPAWN_INTERVAL   = 1.5;
-
     /** Seconds of break time the player gets between waves. */
     private static final double WAVE_BREAK_TIME  = GameConfig.WAVE_BREAK_TIME;
 
@@ -62,7 +59,7 @@ public class WaveManager {
     private Queue<EnemySpawn> spawnQueue = new LinkedList<>();
 
     /** Fires each time it's time to release the next enemy from the queue. */
-    private GameTimer spawnTimer = new GameTimer(SPAWN_INTERVAL, true);
+    private GameTimer spawnTimer = new GameTimer(GameConfig.SPAWN_INTERVAL_BASE, true);
 
     /** Counts down the break period between waves. One-shot (loop = false). */
     private GameTimer waveBreakTimer = new GameTimer(WAVE_BREAK_TIME, false);
@@ -96,7 +93,13 @@ public class WaveManager {
         waveInProgress  = true;
         waitingForBreak = false;
 
-        spawnTimer.reset();
+        // Uses Config values to calculate the new speed
+        double newInterval = Math.max(
+            GameConfig.MIN_SPAWN_INTERVAL, 
+            GameConfig.SPAWN_INTERVAL_BASE - (currentWave * GameConfig.DIFF_PACE_SPEEDUP)
+        );
+        
+        spawnTimer.setDuration(newInterval);
         spawnTimer.start();
     }
 
@@ -107,19 +110,21 @@ public class WaveManager {
      * @param waveNum  The wave being built (starts at 1).
      */
     private void buildWave(int waveNum) {
-        int enemyCount = 3 + waveNum * 2; // 5 on wave 1, 7 on wave 2, ...
+        // Uses Config for quantity
+        int enemyCount = 3 + (int)(waveNum * GameConfig.DIFF_QUANTITY_GROWTH);
 
         for (int i = 0; i < enemyCount; i++) {
             int lane = GameRNG.getRandomNumber(GameConfig.NUM_LANES);
+            int roll = GameRNG.getRandomNumber(100);
 
-            // Gradually introduce tougher enemies as waves progress
-            int roll = GameRNG.getRandomNumber(10);
+            // Uses Config for variety/composition
+            int tankChance = Math.min(
+                GameConfig.TANK_CHANCE_MAX, 
+                GameConfig.TANK_CHANCE_START + (waveNum * GameConfig.TANK_CHANCE_GROWTH)
+            );
 
-            if (waveNum >= 5 && roll == 0) {
+            if (waveNum >= 2 && roll < tankChance) {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.TANK, lane));
-                spawnQueue.add(new EnemySpawn(EnemySpawn.BASIC, lane)); // placeholder
-            } else if (waveNum >= 3 && roll <= 2) {
-                spawnQueue.add(new EnemySpawn(EnemySpawn.BASIC, lane)); // placeholder
             } else {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.BASIC, lane));
             }
@@ -172,10 +177,11 @@ public class WaveManager {
         EnemySpawn spawn = spawnQueue.poll();
         if (spawn == null) return;
 
-        int spawnX = world.getWidth() + GameConfig.s(30); // just off right edge
+        int spawnX = world.getWidth() + GameConfig.s(30); 
         int spawnY = LaneManager.getLaneY(spawn.lane);
 
-        Enemy enemy = spawn.create();
+        // Pass the current wave number to apply stat scaling
+        Enemy enemy = spawn.create(currentWave); 
         enemy.setLane(spawn.lane);
         world.addObject(enemy, spawnX, spawnY);
     }
@@ -207,7 +213,7 @@ public class WaveManager {
     /** @return Seconds left in the break period. */
     public double getBreakTimeRemaining() { return waveBreakTimer.getSecondsRemaining(); }
 
-
+    
     // ─────────────────────────────────────────────────────────────────────────
     // INNER CLASS — enemy spawn descriptor
     // ─────────────────────────────────────────────────────────────────────────
@@ -219,13 +225,10 @@ public class WaveManager {
      * Add new enemy type constants and cases in create() as you build them.
      */
     public static class EnemySpawn {
-
-        // ── Type constants (add more as you create enemy classes) ─────────────
         public static final int BASIC = 0;
-        public static final int FAST  = 1; // needs FastEnemy.java
-        public static final int TANK  = 2; // needs TankEnemy.java
+        public static final int FAST  = 1; 
+        public static final int TANK  = 2; 
 
-        // ── Fields ────────────────────────────────────────────────────────────
         public final int type;
         public final int lane;
 
@@ -234,17 +237,20 @@ public class WaveManager {
             this.lane = lane;
         }
 
-        /**
-         * Instantiates the correct Enemy subclass for this spawn.
-         * Add new cases here as you build more enemy types.
-         */
-        public Enemy create() {
+        // Add the waveNum parameter here!
+        public Enemy create(int waveNum) {
+            Enemy e;
             switch (type) {
-                // Uncomment each case once the corresponding class exists:
-                // case FAST: return new FastEnemy();
-                default:   return new BasicEnemy();
-                case TANK: return new TankEnemy();
+                case TANK: e = new TankEnemy(); break;
+                default:   e = new BasicEnemy(); break;
             }
+            
+            // Uses Config for stat multipliers
+            float hpMult = 1.0f + (waveNum * GameConfig.DIFF_HP_GROWTH);
+            float dmgMult = 1.0f + (waveNum * GameConfig.DIFF_DMG_GROWTH);
+            
+            e.scaleStats(hpMult, dmgMult);
+            return e;
         }
     }
 }

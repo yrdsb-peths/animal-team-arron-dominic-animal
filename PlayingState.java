@@ -39,16 +39,19 @@ public class PlayingState implements GameState {
 
         // Start the game!
         waveManager.startFirstWave();
-
+        GameConfig.GAME_SPEED = 1;//Rest game speed
         // UI
         waveDisplay = new UIText("WAVE: 1", GameConfig.s(22), Color.WHITE);
         goldDisplay = new UIText("GOLD: " + CurrencyManager.getGold(), GameConfig.s(22), Color.YELLOW);
         
-        world.addObject(waveDisplay, GameConfig.s(80), GameConfig.s(20));
+        world.addObject(waveDisplay, GameConfig.s(90), GameConfig.s(20));
         world.addObject(goldDisplay, GameConfig.s(300), GameConfig.s(20));
+        UISpeedButton speedBtn = new UISpeedButton();
+        world.addObject(speedBtn, world.getWidth() - GameConfig.s(70), world.getHeight() - GameConfig.s(30));
         
         uiElements.add(waveDisplay);
         uiElements.add(goldDisplay);
+        uiElements.add(speedBtn);
         
         createUnitMenu(world);
         GameRNG.randomize();
@@ -90,7 +93,12 @@ public class PlayingState implements GameState {
         int startX = GameConfig.s(40);
         int startY = GameConfig.s(100);
         int spacing = GameConfig.s(70);
+        int nextSlot = 2; // We have 2 units, so this is the 3rd slot
     
+        UICancelButton cancelBtn = new UICancelButton(placementManager);
+        world.addObject(cancelBtn, startX, startY + (nextSlot * spacing));
+        uiElements.add(cancelBtn);
+        
         for (int i = 0; i < menuData.length; i++) {
             UIUnitCard card = new UIUnitCard(
                 (int)menuData[i][0], 

@@ -95,17 +95,20 @@ public abstract class Enemy extends Actor {
     /** 
      * HOOK 2: How the enemy moves. You can override this for jumping/teleporting.
      */
+    
+
     protected void performMovement() {
-        // Calculate the decimal speed (e.g., 0.75)
-        double moveAmount = baseSpeed * speedMultiplier;
+        // Multiply by GAME_SPEED so they run faster
+        double moveAmount = baseSpeed * speedMultiplier * GameConfig.GAME_SPEED;
         
-        // Update our high-precision coordinate
         this.exactX -= moveAmount;
-        
-        // Snap the actual actor to the integer version of our precise coordinate
         super.setLocation((int)exactX, (int)exactY);
     }
-
+    
+    public void scaleStats(float healthMult, float damageMult) {
+        this.health = (int)(this.health * healthMult);
+        this.damage = Math.max(1, (int)(this.damage * damageMult));
+    }
     // ──────────────────────────────────────────────────────────────────────────
 
     protected void checkHitbox(MyWorld world) {
@@ -134,7 +137,7 @@ public abstract class Enemy extends Actor {
     public void die() {
         if (!isDead) {
             isDead = true;
-            CurrencyManager.earn(10);
+            CurrencyManager.earn(GameConfig.ENEMY_DROP);
         }
     }
 
