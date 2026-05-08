@@ -30,7 +30,7 @@ public class Projectile extends Actor {
         }
 
         turnTowards(target.getX(), target.getY());
-        move(speed);
+        move(speed * GameConfig.GAME_SPEED);
 
         if (intersects(target)) {
             target.takeDamage(damage);
