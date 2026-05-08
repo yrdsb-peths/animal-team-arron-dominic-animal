@@ -18,14 +18,13 @@ public class MyWorld extends World {
         // Create the state machine — it runs the whole game
         gsm = new GameStateManager(this);
 
-        // Define the layer order (first = on top, last = at bottom)
-        // Add your actor types here as you create them
+       // Define the layer order (first = on top, last = at bottom)
         setPaintOrder(
-            UIText.class      // UI text always on top
-            // Add more classes above this line as you create them:
-            // Player.class,
-            // Enemy.class,
-            // ScrollingBackground.class,
+            UIText.class,      // UI text always on top
+            // Projectile.class,  // Uncomment when created
+            // Unit.class,        // Uncomment when created
+            Enemy.class
+            // LaneTile.class     // Uncomment when created
         );
 
         // Pre-load all sounds (no lag on first play)
@@ -33,6 +32,7 @@ public class MyWorld extends World {
 
         // Start at the main menu
         gsm.pushState(new MenuState());
+        
     }
 
     @Override
@@ -115,6 +115,435 @@ public class GameOverState implements GameState {
     private void addUI(MyWorld world, Actor a, int x, int y) {
         world.addObject(a, x, y);
         uiElements.add(a);
+    }
+}
+
+
+==================================================
+FILE: ./WaveManager.java
+==================================================
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * WaveManager.java  —  ENEMY WAVE SPAWNING AND PROGRESSION SYSTEM
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Role:
+ *   Controls when enemies appear, in which lanes, in what order, and how
+ *   difficult each wave gets.  It also manages the calm "break" period between
+ *   waves so the player has time to spend currency and place new units.
+ *
+ * Wave lifecycle:
+ *   startFirstWave()
+ *     └→ buildWave(1)  fills spawnQueue
+ *     └→ spawnTimer starts ticking
+ *        Each tick: pop one EnemySpawn from queue → addObject(enemy, rightEdge, laneY)
+ *     └→ when queue is empty AND all enemies are dead → triggerWaveBreak()
+ *        waveBreakTimer counts down (player can place units)
+ *     └→ timer expires → buildWave(2) → repeat, scaling difficulty
+ *
+ * Adding new enemy types:
+ *   1. Create your enemy class (e.g. ShieldEnemy.java) extending Enemy.
+ *   2. Add a constant in EnemySpawn: public static final int SHIELD = 3;
+ *   3. Add a case in EnemySpawn.create(): case SHIELD: return new ShieldEnemy();
+ *   4. Reference it in buildWave() at whatever wave threshold you like.
+ *
+ * Uses GameRNG (not Greenfoot.getRandomNumber) so lane selection is
+ * deterministic and rewind-safe.
+ *
+ * Interacts with:
+ *   PlayingState (owns this), LaneManager (spawn Y),
+ *   CurrencyManager (wave-clear bonus), GameRNG, GameTimer,
+ *   Enemy and its subclasses, HUD (reads getWaveNumber(), isBreakTime())
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+import greenfoot.*;
+import java.util.LinkedList;
+import java.util.Queue;
+
+public class WaveManager {
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CONFIGURATION
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Seconds between individual enemy spawns within a wave.(to be changed!) */
+    private static double SPAWN_INTERVAL   = 1.5;
+
+    /** Seconds of break time the player gets between waves. */
+    private static final double WAVE_BREAK_TIME  = GameConfig.WAVE_BREAK_TIME;
+
+    /** Gold awarded to the player each time a wave is cleared. */
+    private static final int WAVE_CLEAR_BONUS    = GameConfig.WAVE_CLEAR_BONUS;
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // STATE
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Which wave the player is currently on (1-indexed). */
+    private int currentWave = 0;
+
+    /** Enemies queued to be spawned for the current wave. */
+    private Queue<EnemySpawn> spawnQueue = new LinkedList<>();
+
+    /** Fires each time it's time to release the next enemy from the queue. */
+    private GameTimer spawnTimer = new GameTimer(SPAWN_INTERVAL, true);
+
+    /** Counts down the break period between waves. One-shot (loop = false). */
+    private GameTimer waveBreakTimer = new GameTimer(WAVE_BREAK_TIME, false);
+
+    /** True while the inter-wave break countdown is running. */
+    private boolean waitingForBreak = false;
+
+    /** True while there are still enemies to spawn OR alive in the world. */
+    private boolean waveInProgress  = false;
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // LIFECYCLE
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Kicks off wave 1.  Call once from PlayingState.enter() after all
+     * other systems have been initialised.
+     */
+    public void startFirstWave() {
+        currentWave = 0;
+        startNextWave();
+    }
+
+    /** Internal: increments wave counter, builds the queue, starts spawning. */
+    private void startNextWave() {
+        currentWave++;
+        spawnQueue.clear();
+        buildWave(currentWave);
+
+        waveInProgress  = true;
+        waitingForBreak = false;
+
+        spawnTimer.reset();
+        spawnTimer.start();
+    }
+
+    /**
+     * Fills spawnQueue with the enemy roster for the given wave number.
+     * Edit this method freely to design your wave curves and difficulty ramps.
+     *
+     * @param waveNum  The wave being built (starts at 1).
+     */
+    private void buildWave(int waveNum) {
+        int enemyCount = 3 + waveNum * 2; // 5 on wave 1, 7 on wave 2, ...
+
+        for (int i = 0; i < enemyCount; i++) {
+            int lane = GameRNG.getRandomNumber(GameConfig.NUM_LANES);
+
+            // Gradually introduce tougher enemies as waves progress
+            int roll = GameRNG.getRandomNumber(10);
+
+            if (waveNum >= 5 && roll == 0) {
+                spawnQueue.add(new EnemySpawn(EnemySpawn.TANK, lane));
+                spawnQueue.add(new EnemySpawn(EnemySpawn.BASIC, lane)); // placeholder
+            } else if (waveNum >= 3 && roll <= 2) {
+                spawnQueue.add(new EnemySpawn(EnemySpawn.BASIC, lane)); // placeholder
+            } else {
+                spawnQueue.add(new EnemySpawn(EnemySpawn.BASIC, lane));
+            }
+        }
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PER-FRAME UPDATE — call this from PlayingState.update() every frame
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Ticks the spawn timer, releases queued enemies, detects wave clears,
+     * and manages the inter-wave break countdown.
+     *
+     * @param world  Needed to add enemies and count live enemies.
+     */
+    public void update(MyWorld world) {
+
+        // ── BREAK MODE: count down until next wave ────────────────────────────
+        if (waitingForBreak) {
+            waveBreakTimer.update(world);
+            if (waveBreakTimer.isExpired()) {
+                startNextWave();
+            }
+            return; // nothing else to do during break
+        }
+
+        // ── WAVE IN PROGRESS ──────────────────────────────────────────────────
+        if (waveInProgress) {
+
+            // Tick spawn timer; when it fires, release the next enemy
+            spawnTimer.update(world);
+            if (spawnTimer.isExpired() && !spawnQueue.isEmpty()) {
+                spawnNext(world);
+            }
+
+            // Wave is cleared when: queue is empty AND no enemies remain alive
+            boolean queueDone   = spawnQueue.isEmpty();
+            boolean allDefeated = world.getObjects(Enemy.class).isEmpty();
+
+            if (queueDone && allDefeated) {
+                triggerWaveBreak(world);
+            }
+        }
+    }
+
+    /** Pops one spawn from the queue and adds the enemy actor to the world. */
+    private void spawnNext(MyWorld world) {
+        EnemySpawn spawn = spawnQueue.poll();
+        if (spawn == null) return;
+
+        int spawnX = world.getWidth() + GameConfig.s(30); // just off right edge
+        int spawnY = LaneManager.getLaneY(spawn.lane);
+
+        Enemy enemy = spawn.create();
+        enemy.setLane(spawn.lane);
+        world.addObject(enemy, spawnX, spawnY);
+    }
+
+    /** Switches to break mode, awards the wave-clear gold bonus. */
+    private void triggerWaveBreak(MyWorld world) {
+        waveInProgress  = false;
+        waitingForBreak = true;
+        waveBreakTimer.reset();
+        waveBreakTimer.start();
+
+        // Gold bonus scales with wave number
+        CurrencyManager.earn(WAVE_CLEAR_BONUS + currentWave * 2);
+
+        // AudioManager.play("wave_clear");
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // QUERIES — read by HUD and PlayingState
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** @return The current wave number (1-indexed). */
+    public int getWaveNumber() { return currentWave; }
+
+    /** @return True while the inter-wave break timer is counting down. */
+    public boolean isBreakTime() { return waitingForBreak; }
+
+    /** @return Seconds left in the break period. */
+    public double getBreakTimeRemaining() { return waveBreakTimer.getSecondsRemaining(); }
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // INNER CLASS — enemy spawn descriptor
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Lightweight data object that describes one enemy to be spawned:
+     * its type and which lane it enters from.
+     *
+     * Add new enemy type constants and cases in create() as you build them.
+     */
+    public static class EnemySpawn {
+
+        // ── Type constants (add more as you create enemy classes) ─────────────
+        public static final int BASIC = 0;
+        public static final int FAST  = 1; // needs FastEnemy.java
+        public static final int TANK  = 2; // needs TankEnemy.java
+
+        // ── Fields ────────────────────────────────────────────────────────────
+        public final int type;
+        public final int lane;
+
+        public EnemySpawn(int type, int lane) {
+            this.type = type;
+            this.lane = lane;
+        }
+
+        /**
+         * Instantiates the correct Enemy subclass for this spawn.
+         * Add new cases here as you build more enemy types.
+         */
+        public Enemy create() {
+            switch (type) {
+                // Uncomment each case once the corresponding class exists:
+                // case FAST: return new FastEnemy();
+                default:   return new BasicEnemy();
+                case TANK: return new TankEnemy();
+            }
+        }
+    }
+}
+
+
+==================================================
+FILE: ./StatusEffect.java
+==================================================
+
+public interface StatusEffect {
+    void update(Enemy enemy);
+    boolean isExpired();
+    String getId();
+}
+
+
+==================================================
+FILE: ./SlowEffect.java
+==================================================
+
+import greenfoot.*;
+
+public class SlowEffect implements StatusEffect {
+    private GameTimer durationTimer;
+    private float slowMultiplier;
+    private String id;
+
+    /**
+     * @param duration How many seconds the slow lasts.
+     * @param multiplier 0.5f = half speed, 0.2f = very slow, 0.0f = frozen.
+     */
+    public SlowEffect(double duration, float multiplier) {
+        this.durationTimer = new GameTimer(duration, false);
+        this.durationTimer.start();
+        this.slowMultiplier = multiplier;
+        this.id = "slow"; // Generic ID so slows don't stack infinitely
+    }
+
+    @Override
+    public void update(Enemy enemy) {
+        // 1. Slow them down
+        enemy.speedMultiplier *= slowMultiplier;
+        
+        // 2. VISUAL TEST: Turn the enemy blue so we know it worked
+        enemy.getImage().setColor(Color.BLUE);
+        enemy.getImage().fillOval(0, 0, enemy.getImage().getWidth(), enemy.getImage().getHeight());
+    
+        // 3. Tick the timer
+        MyWorld world = (MyWorld) enemy.getWorld();
+        durationTimer.update(world);
+    }
+
+    @Override
+    public boolean isExpired() {
+        return durationTimer.isExpired();
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+}
+
+
+==================================================
+FILE: ./Unit.java
+==================================================
+
+import greenfoot.*;
+import java.util.List;
+
+public abstract class Unit extends Actor {
+
+    protected int health;
+    protected int laneIndex;
+    protected int colIndex;
+    protected boolean isDead = false;
+    
+    private GameTimer hurtTimer = new GameTimer(0.15, false); // Flash for 0.15s
+    private GreenfootImage normalImage;
+    private GreenfootImage hurtImage;
+    
+    // Cooldown timer for attacks
+    protected GameTimer attackCooldown;
+
+    public Unit(int health, int laneIndex, int colIndex, double cooldownSeconds) {
+        this.health = health;
+        this.laneIndex = laneIndex;
+        this.colIndex = colIndex;
+        this.attackCooldown = new GameTimer(cooldownSeconds, false);
+    }
+
+    @Override
+    public final void act() {
+        MyWorld world = (MyWorld) getWorld();
+        if (world == null || !world.getGSM().isState(PlayingState.class)) return;
+        
+        if (hurtTimer.isActive()) {
+            hurtTimer.update(world);
+            if (hurtTimer.isExpired()) setImage(normalImage);
+        }
+        
+        if (isDead) {
+            handleDeath(world);
+            return;
+        }
+
+        attackCooldown.update(world);
+        updateBehavior(world);
+    }
+
+    protected void updateBehavior(MyWorld world) {
+        if (!attackCooldown.isActive() || attackCooldown.isExpired()) {
+            Enemy target = findTarget();
+            if (target != null) {
+                attack(target);
+                attackCooldown.reset();
+                attackCooldown.start();
+            }
+        }
+    }
+
+    /** Finds the furthest-left enemy in the exact same lane. */
+    protected Enemy findTarget() {
+        Enemy furthest = null;
+        int furthestX = Integer.MAX_VALUE;
+
+        for (Enemy e : getWorld().getObjects(Enemy.class)) {
+            if (e.getLaneIndex() == laneIndex && !e.isDead()) {
+                // Pick the one with the lowest X coordinate (closest to base)
+                if (e.getX() < furthestX && isWithinRange(e)) {
+                    furthest = e;
+                    furthestX = e.getX();
+                }
+            }
+        }
+        return furthest;
+    }
+
+    protected boolean isWithinRange(Enemy e) {
+        return true; // Default: infinite range in the same lane. Override for melee!
+    }
+
+    protected abstract void attack(Enemy target);
+
+    public void takeDamage(int amount) {
+        health -= amount;
+        // Trigger hurt animation
+        if (normalImage == null) normalImage = new GreenfootImage(getImage());
+        if (hurtImage == null) {
+            hurtImage = new GreenfootImage(normalImage);
+            hurtImage.setColor(new Color(255, 0, 0, 100)); // Transparent red overlay
+            hurtImage.fill();
+        }
+        setImage(hurtImage);
+        hurtTimer.reset();
+        hurtTimer.start();
+    
+        if (health <= 0) die();
+    }
+
+    public void die() {
+        if (!isDead) {
+            isDead = true;
+            LaneManager.vacate(laneIndex, colIndex); // Free the grid cell!
+        }
+    }
+
+    private void handleDeath(MyWorld world) {
+        world.removeObject(this);
+    }
+    
+    public boolean isDead() {
+        return isDead;
     }
 }
 
@@ -227,6 +656,227 @@ public class GameRNG {
 
 
 ==================================================
+FILE: ./Enemy.java
+==================================================
+
+import greenfoot.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Iterator;
+
+public abstract class Enemy extends Actor {
+
+    protected int health;
+    protected int damage;
+    protected boolean isDead = false;
+    
+    protected int laneIndex;
+    protected float baseSpeed;
+    public float speedMultiplier = 1.0f; // Modifiable by Status Effects
+    protected List<StatusEffect> activeEffects = new ArrayList<>();
+    
+    protected double exactX;
+    protected double exactY;
+
+    // NEW: Attack Timer system
+    protected GameTimer attackTimer;
+
+    public Enemy(int maxHealth, int damage, float baseSpeed, double attackCooldown, int laneIndex) {
+        this.health = maxHealth;
+        this.damage = damage;
+        this.baseSpeed = baseSpeed;
+        this.laneIndex = laneIndex;
+        
+        this.exactX = 0; 
+        this.exactY = 0;
+        
+        // Timer loops automatically based on GameConfig stats
+        this.attackTimer = new GameTimer(attackCooldown, true);
+        this.attackTimer.start();
+    }
+    
+    protected void addedToWorld(World world) {
+        this.exactX = getX();
+        this.exactY = getY();
+    }
+
+    @Override
+    public final void act() {
+        MyWorld world = (MyWorld) getWorld();
+        if (world == null || !world.getGSM().isState(PlayingState.class)) return;
+
+        if (isDead) {
+            handleDeath(world);
+            return;
+        }
+
+        this.speedMultiplier = 1.0f; // Reset before effects are applied
+
+        Iterator<StatusEffect> it = activeEffects.iterator();
+        while (it.hasNext()) {
+            StatusEffect effect = it.next();
+            effect.update(this);
+            if (effect.isExpired()) it.remove();
+        }
+
+        updateBehavior(world);
+
+        if (getWorld() != null) {
+            checkHitbox(world);
+            checkOffScreen(world);
+        }
+    }
+
+    // ── THE FLEXIBLE BEHAVIOR SYSTEM ──────────────────────────────────────────
+    
+    /**
+     * The default AI: Check for a unit. If blocked, attack. If clear, move.
+     * You can override this ENTIRE method if you want an enemy that acts totally uniquely.
+     */
+    protected void updateBehavior(MyWorld world) {
+        Unit unitInFront = (Unit) getOneIntersectingObject(Unit.class);
+        
+        if (unitInFront != null && !unitInFront.isDead()) {
+            // We are blocked! Tick the attack timer.
+            attackTimer.update(world);
+            if (attackTimer.isExpired()) {
+                performAttack(unitInFront);
+            }
+        } else {
+            // Path is clear! Walk forward.
+            performMovement();
+        }
+    }
+
+    /** 
+     * HOOK 1: Every enemy subclass MUST define how it attacks.
+     */
+    protected abstract void performAttack(Unit target);
+
+    /** 
+     * HOOK 2: How the enemy moves. You can override this for jumping/teleporting.
+     */
+    protected void performMovement() {
+        // Calculate the decimal speed (e.g., 0.75)
+        double moveAmount = baseSpeed * speedMultiplier;
+        
+        // Update our high-precision coordinate
+        this.exactX -= moveAmount;
+        
+        // Snap the actual actor to the integer version of our precise coordinate
+        super.setLocation((int)exactX, (int)exactY);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+
+    protected void checkHitbox(MyWorld world) {
+        Base base = (Base) getOneIntersectingObject(Base.class);
+        if (base != null) {
+            base.takeDamage();
+            this.die(); 
+        }
+    }
+
+    public void applyEffect(StatusEffect newEffect) {
+        activeEffects.removeIf(e -> e.getId().equals(newEffect.getId()));
+        activeEffects.add(newEffect);
+    }
+    
+    public int getLaneIndex() { return laneIndex; }
+    public boolean isDead() { return isDead; }
+    public void setLane(int lane) { this.laneIndex = lane; }
+
+    public void takeDamage(int amount) {
+        if (isDead) return;
+        health -= amount;
+        if (health <= 0) die();
+    }
+
+    public void die() {
+        if (!isDead) {
+            isDead = true;
+            CurrencyManager.earn(10);
+        }
+    }
+
+    protected abstract void handleDeath(MyWorld world);
+
+    private void checkOffScreen(MyWorld world) {
+        int buffer = GameConfig.s(150);
+        if (getX() < -buffer || getX() > world.getWidth() + buffer ||
+            getY() < -buffer || getY() > world.getHeight() + buffer) {
+            world.removeObject(this);
+        }
+    }
+    
+    @Override
+    public void setLocation(int x, int y) {
+        super.setLocation(x, y);
+        this.exactX = x;
+        this.exactY = y;
+    }
+
+}
+
+
+==================================================
+FILE: ./DamageOverTimeEffect.java
+==================================================
+
+import greenfoot.*;
+
+public class DamageOverTimeEffect implements StatusEffect {
+    private GameTimer durationTimer;
+    private GameTimer tickTimer = new GameTimer(0.5, true); // Damage every 0.5 seconds
+    private int damage;
+    private String id;
+
+    public DamageOverTimeEffect(double duration, int damage, String id) {
+        this.durationTimer = new GameTimer(duration, false);
+        this.durationTimer.start();
+        this.tickTimer.start();
+        this.damage = damage;
+        this.id = id;
+    }
+
+    @Override
+    public void update(Enemy enemy) {
+        MyWorld world = (MyWorld) enemy.getWorld();
+        durationTimer.update(world);
+        tickTimer.update(world);
+
+        if (tickTimer.isExpired()) {
+            enemy.takeDamage(damage);
+            // Visual feedback: flash the enemy purple
+            enemy.getImage().setColor(Color.MAGENTA); 
+        }
+    }
+
+    @Override
+    public boolean isExpired() { return durationTimer.isExpired(); }
+
+    @Override
+    public String getId() { return id; }
+}
+
+
+==================================================
+FILE: ./Base.java
+==================================================
+
+import greenfoot.*;
+
+public class Base extends Actor {
+    public int lives = GameConfig.BASE_LIVES;
+    
+    public void takeDamage() {
+        lives--;
+        // We will expand this later to trigger GameOverState!
+    }
+}
+
+
+==================================================
 FILE: ./MenuState.java
 ==================================================
 
@@ -284,6 +934,46 @@ public class MenuState implements GameState {
     private void addUI(MyWorld world, Actor a, int x, int y) {
         world.addObject(a, x, y);
         uiElements.add(a);
+    }
+}
+
+
+==================================================
+FILE: ./TankEnemy.java
+==================================================
+
+import greenfoot.*;
+
+public class TankEnemy extends Enemy {
+
+    public TankEnemy() {
+        // Use Tank stats from GameConfig
+        super(GameConfig.TANK_ENEMY_HP, 
+              GameConfig.TANK_ENEMY_DAMAGE, 
+              GameConfig.TANK_ENEMY_SPEED, 
+              GameConfig.TANK_ENEMY_ATK_COOLDOWN, 
+              0); 
+              
+        // Tank visual: A big, tough-looking rectangle
+        GreenfootImage img = new GreenfootImage(50, 50);
+        img.setColor(Color.GRAY);
+        img.fillRect(0, 0, 50, 50);
+        img.setColor(Color.BLACK);
+        img.drawRect(0, 0, 49, 49); // Give it a border
+        setImage(img);
+    }
+
+    @Override
+    protected void performAttack(Unit target) {
+        // Tanks hit harder than basic enemies
+        target.takeDamage(this.damage);
+    }
+
+    @Override
+    protected void handleDeath(MyWorld world) {
+        // Maybe tanks drop more gold?
+        CurrencyManager.earn(25);
+        world.removeObject(this);
     }
 }
 
@@ -379,19 +1069,50 @@ public class SaveManager {
 
 
 ==================================================
+FILE: ./SniperUnit.java
+==================================================
+
+import greenfoot.*;
+
+public class SniperUnit extends Unit {
+
+    public SniperUnit(int laneIndex, int colIndex) {
+        // Use the stats from GameConfig
+        super(GameConfig.SNIPER_UNIT_HP, laneIndex, colIndex, GameConfig.SNIPER_UNIT_COOLDOWN);
+        
+        // Give it a visual (A purple rectangle)
+        GreenfootImage img = new GreenfootImage(40, 40);
+        img.setColor(Color.MAGENTA);
+        img.fillRect(0, 0, 40, 40);
+        setImage(img);
+    }
+
+    @Override
+    protected void attack(Enemy target) {
+        // Fire a projectile that does Sniper damage!
+        StatusEffect iceSlow = EffectFactory.createSlow(
+            GameConfig.SNIPER_SLOW_DURATION, 
+            GameConfig.SNIPER_SLOW_POWER
+        );
+        getWorld().addObject(new Projectile(target, GameConfig.SNIPER_UNIT_DAMAGE,iceSlow), getX(), getY());
+    }
+}
+
+
+==================================================
 FILE: ./GameConfig.java
 ==================================================
 
 public class GameConfig {
 
+    // ── Debug ─────────────────────────────────────────────────────────────────
+    public static boolean DEBUG_MODE = false;
+    
     // ── World Size ────────────────────────────────────────────────────────────
     public static final int WORLD_WIDTH  = 800;   // adjust to your game
     public static final int WORLD_HEIGHT = 500;   // adjust to your game
     
-    // Volume
-    public static final int MASTER_VOLUME = 80;
-
-    // ── Scale ─────────────────────────────────────────────────────────────────
+      // ── Scale ─────────────────────────────────────────────────────────────────
     // Change this one number to scale the whole game up or down.
     // 1.0 = normal. 1.5 = 50% bigger. 0.75 = 25% smaller.
     public static final double SCALE = 1.0;
@@ -401,14 +1122,89 @@ public class GameConfig {
         return (int)(value * SCALE);
     }
 
-    // ── Game Constants ────────────────────────────────────────────────────────
-    // Add your game's constants here as you build.
-    // Example:
-    // public static final int PLAYER_SPEED = s(4);
-    // public static final int ENEMY_SPEED  = s(3);
+    // Lane config
+    
+    public static final int NUM_LANES = 5;
+    public static final int LANE_HEIGHT = WORLD_HEIGHT / NUM_LANES;
+    public static final int GRID_COLS = 9;        // columns units can be placed in
+    public static final int BASE_X = s(60);       // left-edge X where Base lives
+    public static final int GRID_START_X = s(120); // first placeable column
+    public static final int GRID_COL_WIDTH = (WORLD_WIDTH - GRID_START_X) / GRID_COLS;
+    
+    //Base config
+    
+    public static final int BASE_LIVES = 3;
+    
+    // Volume config
+    public static final int MASTER_VOLUME = 80;
+    
+    //Economy Config
+    public static final int STARTING_GOLD = 500;
+  
+    // ── UNIT STATS ───────────────────────────────────────────────────────────
+    public static final int BASIC_UNIT_COST = 50;
+    public static final int BASIC_UNIT_HP = 3;
+    public static final double BASIC_UNIT_COOLDOWN = 1.5; // Shoots every 1.5 seconds
+    public static final int BASIC_UNIT_DAMAGE = 20;
+    
+    public static final int SNIPER_UNIT_COST = 100;
+    public static final int SNIPER_UNIT_HP = 4;
+    public static final double SNIPER_UNIT_COOLDOWN = 3.0; // Shoots slow
+    public static final int SNIPER_UNIT_DAMAGE = 40;       // Hits very hard
 
-    // ── Debug ─────────────────────────────────────────────────────────────────
-    public static boolean DEBUG_MODE = false;
+    // ── ENEMY STATS ──────────────────────────────────────────────────────────
+    public static final int BASIC_ENEMY_HP = 100;
+    public static final int BASIC_ENEMY_DAMAGE = 1;
+    public static final float BASIC_ENEMY_SPEED = 1.5f;
+    public static final double BASIC_ENEMY_ATK_COOLDOWN = 1.0; // Attacks every 1 sec
+    
+    public static final int TANK_ENEMY_HP = 300;
+    public static final int TANK_ENEMY_DAMAGE = 2;
+    public static final float TANK_ENEMY_SPEED = 0.5f; // Very slow
+    public static final double TANK_ENEMY_ATK_COOLDOWN = 2.0; // Attacks every 2 seconds
+    
+    // Wave Config
+    public static final double WAVE_BREAK_TIME = 5.0;
+    public static final int WAVE_CLEAR_BONUS = 100;
+    
+    //Effect Config 
+        // ── SNIPER EFFECT STATS ──────────────────────────────────────────────────
+        public static final double SNIPER_SLOW_DURATION = 3.0; // 3 seconds
+        public static final float  SNIPER_SLOW_POWER    = 0.5f; // 50% speed
+}
+
+
+==================================================
+FILE: ./BasicEnemy.java
+==================================================
+
+import greenfoot.*;
+
+public class BasicEnemy extends Enemy {
+
+    public BasicEnemy() {
+        // Pass all the stats from GameConfig!
+        super(GameConfig.BASIC_ENEMY_HP, 
+              GameConfig.BASIC_ENEMY_DAMAGE, 
+              GameConfig.BASIC_ENEMY_SPEED, 
+              GameConfig.BASIC_ENEMY_ATK_COOLDOWN, 
+              0); 
+              
+        setImage(new GreenfootImage(40, 40));
+        getImage().setColor(Color.RED);
+        getImage().fillOval(0, 0, 40, 40);
+    }
+
+    // MANDATORY: Define how it attacks
+    @Override
+    protected void performAttack(Unit target) {
+        target.takeDamage(this.damage); // Just do normal damage
+    }
+
+    @Override
+    protected void handleDeath(MyWorld world) {
+        world.removeObject(this);
+    }
 }
 
 
@@ -573,6 +1369,149 @@ public class UIText extends Actor {
         lines.add(currentLine);
         return lines;
     }
+}
+
+
+==================================================
+FILE: ./CurrencyManager.java
+==================================================
+
+public class CurrencyManager {
+    private static int gold = 0;
+    public static final int STARTING_GOLD = GameConfig.STARTING_GOLD;
+
+    public static void reset() {
+        gold = STARTING_GOLD;
+    }
+
+    public static void earn(int amount) {
+        gold += amount;
+    }
+
+    public static boolean spend(int cost) {
+        if (gold >= cost) {
+            gold -= cost;
+            return true;
+        }
+        return false;
+    }
+
+    public static int getGold() {
+        return gold;
+    }
+}
+
+
+
+==================================================
+FILE: ./Projectile.java
+==================================================
+
+import greenfoot.*;
+
+public class Projectile extends Actor {
+    private Enemy target;
+    private int damage;
+    private int speed = GameConfig.s(8);
+    
+    private StatusEffect payload;
+
+    public Projectile(Enemy target, int damage, StatusEffect payload) {
+        this.target = target;
+        this.damage = damage;
+        this.payload = payload;
+        
+        GreenfootImage img = new GreenfootImage(15, 15);
+        img.setColor(Color.YELLOW);
+        img.fillOval(0, 0, 15, 15);
+        setImage(img);
+    }
+
+    @Override
+    public void act() {
+        MyWorld world = (MyWorld) getWorld();
+        if (world == null || !world.getGSM().isState(PlayingState.class)) return;
+
+        // If target died before we reached it, destroy the projectile
+        if (target == null || target.getWorld() == null || target.isDead()) {
+            world.removeObject(this);
+            return;
+        }
+
+        turnTowards(target.getX(), target.getY());
+        move(speed);
+
+        if (intersects(target)) {
+            target.takeDamage(damage);
+            
+            if (payload != null) {
+                target.applyEffect(payload);
+            }
+            
+            world.removeObject(this);
+        }
+    }
+}
+
+
+==================================================
+FILE: ./UIUnitCard.java
+==================================================
+
+import greenfoot.*;
+
+public class UIUnitCard extends Actor {
+    private int unitID;
+    private int price;
+    private Color unitColor;
+    private String key;
+    private PlacementManager pm;
+
+    public UIUnitCard(int id, int price, Color color, String key, PlacementManager pm) {
+        this.unitID = id;
+        this.price = price;
+        this.unitColor = color;
+        this.key = key;
+        this.pm = pm;
+        
+        updateImage();
+    }
+
+    public void act() {
+        // Redraw only if selection changes
+        updateImage();
+        
+        // Allow clicking the card itself to select
+        if (Greenfoot.mouseClicked(this)) {
+            pm.setSelectedUnit(this.unitID);
+        }
+    
+        // 2. Redraw to show if we are selected
+        updateImage();
+    }
+
+    private void updateImage() {
+        boolean isSelected = (pm.getSelectedUnit() == unitID);
+        int size = GameConfig.s(50);
+        GreenfootImage img = new GreenfootImage(size, size + 20);
+        
+        // Background - Brighten if selected
+        img.setColor(isSelected ? Color.WHITE : new Color(50, 50, 50));
+        img.fill();
+        
+        // Unit Icon
+        img.setColor(unitColor);
+        img.fillRect(10, 10, size - 20, size - 20);
+        
+        // Price & Key Label
+        img.setColor(isSelected ? Color.BLACK : Color.WHITE);
+        img.setFont(new Font("SansSerif", true, false, 12));
+        img.drawString("$" + price, 5, size + 12);
+        img.drawString("[" + key + "]", size - 20, 15);
+        
+        setImage(img);
+    }
+
 }
 
 
@@ -776,96 +1715,6 @@ public class GameTimer {
 
 
 ==================================================
-FILE: ./Player.java
-==================================================
-
-import greenfoot.*;
-
-public class Player extends Actor {
-
-    // ── Movement ──────────────────────────────────────────────────────────────
-    private int speed = GameConfig.s(4);
-
-    // ── State ─────────────────────────────────────────────────────────────────
-    private boolean isDead = false;
-
-    /** How long after death before transitioning to Game Over */
-    private GameTimer deathTimer = new GameTimer(2.0, false);
-
-    // ── Constructor ───────────────────────────────────────────────────────────
-
-    public Player() {
-        // Draw a simple placeholder sprite (replace with a real image later)
-        GreenfootImage img = new GreenfootImage(GameConfig.s(40), GameConfig.s(40));
-        img.setColor(Color.CYAN);
-        img.fillOval(0, 0, img.getWidth(), img.getHeight());
-        setImage(img);
-    }
-
-    // ── Act ───────────────────────────────────────────────────────────────────
-
-    @Override
-    public void act() {
-        MyWorld world = (MyWorld) getWorld();
-        if (world == null) return;
-
-        // Only run during PlayingState
-        if (!world.getGSM().isState(PlayingState.class)) return;
-
-        if (isDead) {
-            handleDeath(world);
-        } else {
-            handleMovement();
-        }
-    }
-
-    // ── Movement ──────────────────────────────────────────────────────────────
-
-    private void handleMovement() {
-        // Arrow key movement — modify this for your game's control scheme
-        if (Greenfoot.isKeyDown("up")    && getY() > GameConfig.s(20))
-            setLocation(getX(), getY() - speed);
-        if (Greenfoot.isKeyDown("down")  && getY() < getWorld().getHeight() - GameConfig.s(20))
-            setLocation(getX(), getY() + speed);
-        if (Greenfoot.isKeyDown("left")  && getX() > GameConfig.s(20))
-            setLocation(getX() - speed, getY());
-        if (Greenfoot.isKeyDown("right") && getX() < getWorld().getWidth() - GameConfig.s(20))
-            setLocation(getX() + speed, getY());
-    }
-
-    // ── Death ─────────────────────────────────────────────────────────────────
-
-    public void die() {
-        if (isDead) return; // already dead, ignore
-        isDead = true;
-
-        // Visual feedback — turn red
-        GreenfootImage img = new GreenfootImage(GameConfig.s(40), GameConfig.s(40));
-        img.setColor(Color.RED);
-        img.fillOval(0, 0, img.getWidth(), img.getHeight());
-        setImage(img);
-
-        // Start the death countdown
-        deathTimer.reset();
-        deathTimer.start();
-
-        // AudioManager.play("death_sound");
-    }
-
-    private void handleDeath(MyWorld world) {
-        deathTimer.update(world);
-        if (deathTimer.isExpired()) {
-            world.getGSM().changeState(new GameOverState());
-        }
-    }
-
-    // ── Queries ───────────────────────────────────────────────────────────────
-
-    public boolean isDead() { return isDead; }
-}
-
-
-==================================================
 FILE: ./GameStateManager.java
 ==================================================
 
@@ -1001,79 +1850,139 @@ public class GameStateManager {
 
 
 ==================================================
+FILE: ./BasicUnit.java
+==================================================
+
+import greenfoot.*;
+
+public class BasicUnit extends Unit {
+    public static final int COST = GameConfig.BASIC_UNIT_COST;
+
+    public BasicUnit(int laneIndex, int colIndex) {
+        super(GameConfig.BASIC_UNIT_HP, laneIndex, colIndex, GameConfig.BASIC_UNIT_COOLDOWN); // 100 HP, 1.5 second cooldown
+        
+        GreenfootImage img = new GreenfootImage(40, 40);
+        img.setColor(Color.GREEN);
+        img.fillRect(0, 0, 40, 40);
+        setImage(img);
+    }
+
+    @Override
+    protected void attack(Enemy target) {
+        //Project takes in 1. target 2. damage
+        getWorld().addObject(new Projectile(target, GameConfig.BASIC_UNIT_DAMAGE, null), getX(), getY());
+    }
+}
+
+
+==================================================
 FILE: ./PlayingState.java
 ==================================================
 
 import greenfoot.*;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 public class PlayingState implements GameState {
 
-    /** Track UI elements so we can remove them cleanly on exit */
     private List<Actor> uiElements = new ArrayList<>();
-
-    /** Score display label */
-    private UIText scoreDisplay;
-
-    /** Tracks when this session started (for playtime saving) */
+    private UIText waveDisplay; 
+    private UIText goldDisplay;
     private long sessionStartTime;
+
+    private WaveManager waveManager;
+    private PlacementManager placementManager;
+    private Base base; // Store reference to Base to show lives
 
     @Override
     public void enter(MyWorld world) {
-        // ── Reset everything ──────────────────────────────────────────────────
-        world.removeObjects(world.getObjects(null)); // clear all actors
+        world.removeObjects(world.getObjects(null)); 
         ScoreManager.reset();
         sessionStartTime = System.currentTimeMillis();
 
-        // ── Background ────────────────────────────────────────────────────────
         world.setBackground(new GreenfootImage(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
         world.getBackground().setColor(new Color(30, 30, 50));
         world.getBackground().fill();
 
-        // ── Spawn the player ──────────────────────────────────────────────────
-        Player player = new Player();
-        world.addObject(player, world.getWidth() / 2, world.getHeight() / 2);
+        // Spawn Base
+        base = new Base();
+        GreenfootImage baseImg = new GreenfootImage(50, GameConfig.WORLD_HEIGHT);
+        baseImg.setColor(Color.BLUE);
+        baseImg.fillRect(0, 0, 50, GameConfig.WORLD_HEIGHT);
+        base.setImage(baseImg);
+        world.addObject(base, GameConfig.BASE_X, GameConfig.WORLD_HEIGHT / 2);
 
-        // ── UI ────────────────────────────────────────────────────────────────
-        scoreDisplay = new UIText("SCORE: 0", GameConfig.s(22), Color.WHITE);
-        world.addObject(scoreDisplay, GameConfig.s(60), GameConfig.s(20));
-        uiElements.add(scoreDisplay);
+        // Initialize Managers
+        LaneManager.reset();
+        CurrencyManager.reset();
+        waveManager = new WaveManager();
+        placementManager = new PlacementManager();
 
-        // ── Music ─────────────────────────────────────────────────────────────
-        // AudioManager.playLoop("game_bgm");
+        // Start the game!
+        waveManager.startFirstWave();
 
-        // ── Seed the random number generator ─────────────────────────────────
+        // UI
+        waveDisplay = new UIText("WAVE: 1", GameConfig.s(22), Color.WHITE);
+        goldDisplay = new UIText("GOLD: " + CurrencyManager.getGold(), GameConfig.s(22), Color.YELLOW);
+        
+        world.addObject(waveDisplay, GameConfig.s(80), GameConfig.s(20));
+        world.addObject(goldDisplay, GameConfig.s(300), GameConfig.s(20));
+        
+        uiElements.add(waveDisplay);
+        uiElements.add(goldDisplay);
+        
+        createUnitMenu(world);
         GameRNG.randomize();
     }
 
     @Override
     public void update(MyWorld world) {
-        // Update the score display every frame
-        scoreDisplay.setText("SCORE: " + ScoreManager.getScore());
+        // Run game logic
+        waveManager.update(world);
+        placementManager.update(world);
 
-        // Add your per-frame gameplay logic here:
-        // - Spawning enemies
-        // - Difficulty scaling
-        // - Checking win/lose conditions
+        // Update UI displays
+        waveDisplay.setText("WAVE: " + waveManager.getWaveNumber() + " | LIVES: " + base.lives);
+        goldDisplay.setText("GOLD: " + CurrencyManager.getGold());
+        
+        // If Base dies, Game Over
+        if (base.lives <= 0) {
+            world.getGSM().changeState(new GameOverState());
+        }
     }
-
+    
     @Override
     public void exit(MyWorld world) {
-        // Save playtime
         long playedMs = System.currentTimeMillis() - sessionStartTime;
-        int playedSeconds = (int)(playedMs / 1000);
-        SaveManager.addInt("total_playtime", playedSeconds);
-        SaveManager.save();
-
-        // Update high score
+        SaveManager.addInt("total_playtime", (int)(playedMs / 1000));
         ScoreManager.updateHighScore();
 
-        // Remove UI
         world.removeObjects(uiElements);
         uiElements.clear();
-
-        // AudioManager.stop("game_bgm");
+    }
+    
+    private void createUnitMenu(MyWorld world) {
+        // Data definition: {ID, Cost, Color, Key}
+        Object[][] menuData = {
+            {1, GameConfig.BASIC_UNIT_COST, Color.GREEN, "1"},
+            {2, GameConfig.SNIPER_UNIT_COST, Color.MAGENTA, "2"}
+        };
+    
+        int startX = GameConfig.s(40);
+        int startY = GameConfig.s(100);
+        int spacing = GameConfig.s(70);
+    
+        for (int i = 0; i < menuData.length; i++) {
+            UIUnitCard card = new UIUnitCard(
+                (int)menuData[i][0], 
+                (int)menuData[i][1], 
+                (Color)menuData[i][2], 
+                (String)menuData[i][3], 
+                placementManager
+            );
+            world.addObject(card, startX, startY + (i * spacing));
+            uiElements.add(card);
+        }
     }
 }
 
@@ -1382,4 +2291,308 @@ public class AudioManager {
 }
 
 
+
+
+==================================================
+FILE: ./EffectFactory.java
+==================================================
+
+public class EffectFactory {
+
+    /** 
+     * Creates a standard slow effect.
+     * @param duration Seconds it lasts
+     * @param power 0.5f means 50% speed, 0.0f means frozen.
+     */
+    public static StatusEffect createSlow(double duration, float power) {
+        return new SlowEffect(duration, power);
+    }
+
+    /** 
+     * Creates a Damage-Over-Time (Poison/Fire) effect.
+     */
+    public static StatusEffect createDoT(double duration, int damagePerTick, String type) {
+        return new DamageOverTimeEffect(duration, damagePerTick, type);
+    }
+}
+
+
+==================================================
+FILE: ./LaneManager.java
+==================================================
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * LaneManager.java  —  GRID LAYOUT AND CELL OCCUPANCY FOR THE LANE SYSTEM
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Role:
+ *   A static utility class that answers two questions for every other system:
+ *     1. "What pixel position is lane N / column C?"
+ *     2. "Is this cell already occupied by a Unit?"
+ *
+ *   Nothing in the game should hardcode lane Y-coordinates or cell X-coordinates.
+ *   All of that math lives here so changing GameConfig constants automatically
+ *   updates every system that calls getLaneY() or getCellX().
+ *
+ * Grid layout:
+ *   Lanes run horizontally across the screen (top lane = 0).
+ *   Columns are the placeable slots within a lane, numbered LEFT to RIGHT.
+ *   Column 0 starts at GameConfig.GRID_START_X (just to the right of the Base).
+ *   Enemies spawn off the right edge and walk left through all columns.
+ *
+ *   Visual (5 lanes, 9 columns):
+ *
+ *     [BASE] | col0 | col1 | col2 | ... | col8 |  ← lane 0
+ *            | col0 | col1 | col2 | ... | col8 |  ← lane 1
+ *            ...
+ *            | col0 | col1 | col2 | ... | col8 |  ← lane 4
+ *                                                 (enemies enter from the right →)
+ *
+ * Interacts with:
+ *   WaveManager (spawn Y), PlacementManager (place X/Y, check occupancy),
+ *   Unit (report its cell so it can be vacated on death),
+ *   Enemy (lane Y for display only — actual Y is set at spawn time)
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+public class LaneManager {
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // INTERNAL STATE  (reset at the start of every PlayingState)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Which cells have a Unit standing in them. [lane][col] */
+    private static boolean[][] occupied =
+        new boolean[GameConfig.NUM_LANES][GameConfig.GRID_COLS];
+
+    /** The Unit reference stored in each cell (null = empty). [lane][col] */
+    private static Unit[][] unitGrid =
+        new Unit[GameConfig.NUM_LANES][GameConfig.GRID_COLS];
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // LIFECYCLE — call once at the start of each game session
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Wipes all occupancy state.
+     * Called by PlayingState.enter() before any Units are placed.
+     */
+    public static void reset() {
+        occupied = new boolean[GameConfig.NUM_LANES][GameConfig.GRID_COLS];
+        unitGrid  = new Unit[GameConfig.NUM_LANES][GameConfig.GRID_COLS];
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // COORDINATE CONVERSION  —  index → pixel
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the pixel Y-centre of the given lane.
+     * Use this when spawning enemies (WaveManager) or placing units (PlacementManager).
+     *
+     * @param lane  Lane index 0 (top) to NUM_LANES-1 (bottom).
+     * @return      Y coordinate of the lane's centre row.
+     */
+    public static int getLaneY(int lane) {
+        return GameConfig.LANE_HEIGHT / 2 + lane * GameConfig.LANE_HEIGHT;
+    }
+
+    /**
+     * Returns the pixel X-centre of the given grid column.
+     *
+     * @param col  Column index 0 (leftmost placeable) to GRID_COLS-1.
+     * @return     X coordinate of the column's centre.
+     */
+    public static int getCellX(int col) {
+        return GameConfig.GRID_START_X + col * GameConfig.GRID_COL_WIDTH
+               + GameConfig.GRID_COL_WIDTH / 2;
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // COORDINATE CONVERSION  —  pixel → index  (used by PlacementManager)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Converts a raw Y pixel (e.g. mouse click) to a lane index.
+     * Always returns a valid lane — clamps to the nearest edge lane if the
+     * click is outside the world boundaries.
+     *
+     * @param y  Raw pixel Y from Greenfoot.getMouseInfo().getY().
+     * @return   Lane index in [0, NUM_LANES-1].
+     */
+    public static int laneFromY(int y) {
+        int lane = y / GameConfig.LANE_HEIGHT;
+        return Math.max(0, Math.min(GameConfig.NUM_LANES - 1, lane));
+    }
+
+    /**
+     * Converts a raw X pixel to a column index.
+     * Returns -1 if the X is in the Base zone (left of GRID_START_X) or
+     * past the right edge of the grid — indicating an invalid placement.
+     *
+     * @param x  Raw pixel X from Greenfoot.getMouseInfo().getX().
+     * @return   Column index in [0, GRID_COLS-1], or -1 if outside the grid.
+     */
+    public static int colFromX(int x) {
+        if (x < GameConfig.GRID_START_X) return -1; // Base area — no placement
+        int col = (x - GameConfig.GRID_START_X) / GameConfig.GRID_COL_WIDTH;
+        return (col >= 0 && col < GameConfig.GRID_COLS) ? col : -1;
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // OCCUPANCY  —  track which cells have Units in them
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns true if (lane, col) already contains a Unit, or if the
+     * coordinates are out of bounds (treat out-of-bounds as "occupied"
+     * so PlacementManager never tries to place there).
+     */
+    public static boolean isOccupied(int lane, int col) {
+        if (!inBounds(lane, col)) return true;
+        return occupied[lane][col];
+    }
+
+    /**
+     * Marks a cell as occupied and stores the Unit reference.
+     * Called by PlacementManager right after placing a Unit.
+     *
+     * @param lane  Lane index.
+     * @param col   Column index.
+     * @param unit  The Unit being placed in this cell.
+     */
+    public static void occupy(int lane, int col, Unit unit) {
+        if (!inBounds(lane, col)) return;
+        occupied[lane][col] = true;
+        unitGrid[lane][col]  = unit;
+    }
+
+    /**
+     * Frees a cell so a new Unit can be placed there.
+     * Units MUST call this from their die() or removal logic.
+     *
+     * @param lane  Lane index.
+     * @param col   Column index.
+     */
+    public static void vacate(int lane, int col) {
+        if (!inBounds(lane, col)) return;
+        occupied[lane][col] = false;
+        unitGrid[lane][col]  = null;
+    }
+
+    /**
+     * Returns the Unit in a cell, or null if the cell is empty.
+     * Useful for inspecting a specific grid position.
+     */
+    public static Unit getUnitAt(int lane, int col) {
+        if (!inBounds(lane, col)) return null;
+        return unitGrid[lane][col];
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PRIVATE HELPERS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private static boolean inBounds(int lane, int col) {
+        return lane >= 0 && lane < GameConfig.NUM_LANES
+            && col  >= 0 && col  < GameConfig.GRID_COLS;
+    }
+}
+
+
+==================================================
+FILE: ./PlacementManager.java
+==================================================
+
+import greenfoot.*;
+
+public class PlacementManager {
+    private int selectedUnit = 1; 
+    private Actor previewActor;
+
+    public void update(MyWorld world) {
+        // Switch units with 1, 2
+        if (Greenfoot.isKeyDown("1")) { selectedUnit = 1; updatePreview(world); }
+        if (Greenfoot.isKeyDown("2")) { selectedUnit = 2; updatePreview(world); }
+
+        MouseInfo mouse = Greenfoot.getMouseInfo();
+        if (mouse != null) {
+            // 1. Manage the Preview Actor (The Ghost)
+            if (previewActor == null) updatePreview(world);
+            
+            // Snap preview to the grid
+            int col = LaneManager.colFromX(mouse.getX());
+            int lane = LaneManager.laneFromY(mouse.getY());
+            
+            if (col != -1) {
+                previewActor.setLocation(LaneManager.getCellX(col), LaneManager.getLaneY(lane));
+                // Make it red if blocked, white if clear
+                previewActor.getImage().setTransparency(LaneManager.isOccupied(lane, col) ? 100 : 180);
+            }
+            
+            if (Greenfoot.mouseClicked(null)) {
+                // LEFT CLICK (Button 1): Place
+                if (mouse.getButton() == 1) {
+                    attemptPlacement(world, mouse.getX(), mouse.getY());
+                }
+                // RIGHT CLICK (Button 3): Remove
+                else if (mouse.getButton() == 3) {
+                    Unit u = LaneManager.getUnitAt(lane, col);
+                    if (u != null) u.die(); // No refund
+                }
+            }
+            
+            // 2. Handle Placement
+            if (Greenfoot.mouseClicked(null)) {
+                attemptPlacement(world, mouse.getX(), mouse.getY());
+            }
+        }
+    }
+
+    private void updatePreview(MyWorld world) {
+        if (previewActor != null) world.removeObject(previewActor);
+        
+        // Create a visual that matches the selected unit
+        previewActor = new Actor() {}; 
+        GreenfootImage img;
+        if (selectedUnit == 1) {
+            img = new GreenfootImage(40, 40);
+            img.setColor(Color.GREEN);
+        } else {
+            img = new GreenfootImage(40, 40);
+            img.setColor(Color.MAGENTA);
+        }
+        img.fillRect(0, 0, 40, 40);
+        previewActor.setImage(img);
+        world.addObject(previewActor, 0, 0);
+    }
+
+    private void attemptPlacement(MyWorld world, int x, int y) {
+        int col = LaneManager.colFromX(x);
+        int lane = LaneManager.laneFromY(y);
+
+        if (col == -1 || LaneManager.isOccupied(lane, col)) return; 
+
+        int cost = (selectedUnit == 1) ? GameConfig.BASIC_UNIT_COST : GameConfig.SNIPER_UNIT_COST;
+
+        if (CurrencyManager.spend(cost)) {
+            Unit u = (selectedUnit == 1) ? new BasicUnit(lane, col) : new SniperUnit(lane, col);
+            LaneManager.occupy(lane, col, u);
+            world.addObject(u, LaneManager.getCellX(col), LaneManager.getLaneY(lane));
+        }
+    }
+    
+    public int getSelectedUnit() {
+        return selectedUnit;
+    }
+
+    public void setSelectedUnit(int id) {
+        this.selectedUnit = id;
+    }
+
+}
 

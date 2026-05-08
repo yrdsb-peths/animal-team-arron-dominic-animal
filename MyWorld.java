@@ -13,14 +13,13 @@ public class MyWorld extends World {
         // Create the state machine — it runs the whole game
         gsm = new GameStateManager(this);
 
-        // Define the layer order (first = on top, last = at bottom)
-        // Add your actor types here as you create them
+       // Define the layer order (first = on top, last = at bottom)
         setPaintOrder(
-            UIText.class      // UI text always on top
-            // Add more classes above this line as you create them:
-            // Player.class,
-            // Enemy.class,
-            // ScrollingBackground.class,
+            UIText.class,      // UI text always on top
+            // Projectile.class,  // Uncomment when created
+            // Unit.class,        // Uncomment when created
+            Enemy.class
+            // LaneTile.class     // Uncomment when created
         );
 
         // Pre-load all sounds (no lag on first play)
@@ -28,6 +27,7 @@ public class MyWorld extends World {
 
         // Start at the main menu
         gsm.pushState(new MenuState());
+        
     }
 
     @Override
