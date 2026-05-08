@@ -5,40 +5,48 @@ public class PlacementManager {
     private Actor previewActor;
 
     public void update(MyWorld world) {
-        // Switch units with 1, 2
+        MouseInfo mouse = Greenfoot.getMouseInfo();
+        
+        // Switch units with keys
         if (Greenfoot.isKeyDown("1")) { selectedUnit = 1; updatePreview(world); }
         if (Greenfoot.isKeyDown("2")) { selectedUnit = 2; updatePreview(world); }
-
-        MouseInfo mouse = Greenfoot.getMouseInfo();
+        if (Greenfoot.isKeyDown("escape") || Greenfoot.isKeyDown("0")) { 
+            selectedUnit = 0; // 0 = Nothing selected
+            updatePreview(world); 
+        }
+    
         if (mouse != null) {
-            // 1. Manage the Preview Actor (The Ghost)
-            if (previewActor == null) updatePreview(world);
-            
-            // Snap preview to the grid
-            int col = LaneManager.colFromX(mouse.getX());
-            int lane = LaneManager.laneFromY(mouse.getY());
-            
-            if (col != -1) {
-                previewActor.setLocation(LaneManager.getCellX(col), LaneManager.getLaneY(lane));
-                // Make it red if blocked, white if clear
-                previewActor.getImage().setTransparency(LaneManager.isOccupied(lane, col) ? 100 : 180);
+            // 1. Manage the Preview (only show if a unit is actually selected)
+            if (selectedUnit != 0) {
+                if (previewActor == null) updatePreview(world);
+                int col = LaneManager.colFromX(mouse.getX());
+                int lane = LaneManager.laneFromY(mouse.getY());
+                if (col != -1) {
+                    previewActor.setLocation(LaneManager.getCellX(col), LaneManager.getLaneY(lane));
+                    previewActor.getImage().setTransparency(LaneManager.isOccupied(lane, col) ? 100 : 180);
+                }
+            } else if (previewActor != null) {
+                world.removeObject(previewActor);
+                previewActor = null;
             }
-            
+    
+            // 2. Handle Clicks
             if (Greenfoot.mouseClicked(null)) {
-                // LEFT CLICK (Button 1): Place
-                if (mouse.getButton() == 1) {
+                // CRITICAL FIX: If the mouse clicked an Actor, check if it's UI
+                // If we clicked a button or a card, STOP and don't place a unit!
+                Actor clicked = mouse.getActor();
+                if (clicked instanceof UIUnitCard || clicked instanceof UISpeedButton || clicked instanceof UICancelButton) {
+                    return; 
+                }
+    
+                if (mouse.getButton() == 1) { // Left Click
                     attemptPlacement(world, mouse.getX(), mouse.getY());
-                }
-                // RIGHT CLICK (Button 3): Remove
-                else if (mouse.getButton() == 3) {
+                } else if (mouse.getButton() == 3) { // Right Click
+                    int col = LaneManager.colFromX(mouse.getX());
+                    int lane = LaneManager.laneFromY(mouse.getY());
                     Unit u = LaneManager.getUnitAt(lane, col);
-                    if (u != null) u.die(); // No refund
+                    if (u != null) u.die();
                 }
-            }
-            
-            // 2. Handle Placement
-            if (Greenfoot.mouseClicked(null)) {
-                attemptPlacement(world, mouse.getX(), mouse.getY());
             }
         }
     }
