@@ -111,16 +111,23 @@ public class GameTimer {
      */
     public void update(MyWorld world) {
         if (!active) return;
-        
-        // Only tick while PlayingState is active
         if (!world.getGSM().isState(PlayingState.class)) return;
-    
-        if (remainingFrames > 0) {
-            remainingFrames--;
-        } else if (loop) {
-            reset();
-        } else {
-            active = false;
+
+        // 1. If it expired LAST frame, reset it NOW. 
+        // This gives the rest of the game 1 frame to see isExpired() == true
+        if (remainingFrames <= 0) {
+            if (loop) {
+                int overshoot = remainingFrames; 
+                reset();
+                remainingFrames += overshoot; // Keep math perfect for 2x/4x speeds
+            } else {
+                remainingFrames = 0;
+                active = false;
+            }
+        } 
+        // 2. Otherwise, tick it down based on Game Speed
+        else {
+            remainingFrames -= GameConfig.GAME_SPEED;
         }
     }
 
