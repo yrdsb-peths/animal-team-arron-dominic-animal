@@ -1,0 +1,1385 @@
+
+==================================================
+FILE: ./MyWorld.java
+==================================================
+
+import greenfoot.*;
+
+public class MyWorld extends World {
+
+    private GameStateManager gsm;
+
+    public MyWorld() {
+        super(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, 1, false);
+
+        // Load saved data from disk (scores, settings, unlocks)
+        SaveManager.load();
+
+        // Create the state machine — it runs the whole game
+        gsm = new GameStateManager(this);
+
+        // Define the layer order (first = on top, last = at bottom)
+        // Add your actor types here as you create them
+        setPaintOrder(
+            UIText.class      // UI text always on top
+            // Add more classes above this line as you create them:
+            // Player.class,
+            // Enemy.class,
+            // ScrollingBackground.class,
+        );
+
+        // Pre-load all sounds (no lag on first play)
+        AudioManager.init();
+
+        // Start at the main menu
+        gsm.pushState(new MenuState());
+    }
+
+    @Override
+    public void act() {
+        // The entire game flows through this one line, 60 times per second
+        gsm.update();
+    }
+
+    /** Gives actors access to the state machine */
+    public GameStateManager getGSM() {
+        return gsm;
+    }
+}
+
+
+==================================================
+FILE: ./GameOverState.java
+==================================================
+
+import greenfoot.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class GameOverState implements GameState {
+
+    private List<Actor> uiElements = new ArrayList<>();
+
+    @Override
+    public void enter(MyWorld world) {
+        int midX = world.getWidth() / 2;
+        int midY = world.getHeight() / 2;
+
+        int finalScore = ScoreManager.getScore();
+        int bestScore  = SaveManager.getInt("all_time_high");
+
+        // Update best score if beaten
+        if (finalScore > bestScore) {
+            SaveManager.setInt("all_time_high", finalScore);
+            SaveManager.save();
+            bestScore = finalScore;
+        }
+
+        // "GAME OVER" title
+        addUI(world, new UIText("GAME OVER", GameConfig.s(55), Color.RED),
+              midX, midY - GameConfig.s(90));
+
+        // Score
+        addUI(world, new UIText("SCORE: " + finalScore, GameConfig.s(28), Color.WHITE),
+              midX, midY - GameConfig.s(20));
+
+        // Best
+        addUI(world, new UIText("BEST:  " + bestScore, GameConfig.s(24), Color.YELLOW),
+              midX, midY + GameConfig.s(30));
+
+        // Replay prompt
+        addUI(world, new UIText("[ ENTER : Play Again ]   [ ESC : Menu ]",
+                                GameConfig.s(18), Color.CYAN),
+              midX, midY + GameConfig.s(100));
+
+        // AudioManager.play("game_over_sound");
+    }
+
+    @Override
+    public void update(MyWorld world) {
+        String key = Greenfoot.getKey();
+
+        if ("enter".equals(key)) {
+            world.getGSM().changeState(new PlayingState());
+        } else if ("escape".equals(key)) {
+            world.getGSM().changeState(new MenuState());
+        }
+    }
+
+    @Override
+    public void exit(MyWorld world) {
+        world.removeObjects(uiElements);
+        uiElements.clear();
+    }
+
+    private void addUI(MyWorld world, Actor a, int x, int y) {
+        world.addObject(a, x, y);
+        uiElements.add(a);
+    }
+}
+
+
+==================================================
+FILE: ./GameRNG.java
+==================================================
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * GameRNG.java  —  DETERMINISTIC RANDOM NUMBER GENERATOR FOR REWIND CORRECTNESS
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Role:
+ *   A custom random number generator that produces reproducible sequences.
+ *   Unlike Greenfoot.getRandomNumber(), this generator's internal state (its
+ *   "seed") can be SAVED and RESTORED, which is essential for the time-rewind
+ *   system.
+ *
+ * WHY THIS EXISTS — The Rewind Problem:
+ *   If SpawnManager used Greenfoot.getRandomNumber(), then after a rewind,
+ *   re-running the same frames would produce DIFFERENT random lane choices
+ *   for new enemy spawns.  The enemies would appear in wrong positions,
+ *   breaking the "true time reversal" illusion.
+ *
+ *   GameRNG fixes this by:
+ *     1. Storing the seed in every Time_FrameSnapshot.
+ *     2. Restoring the seed when rewinding to that snapshot.
+ *     3. Any call to getRandomNumber() after the restore produces the
+ *        exact same sequence as the original timeline.
+ *
+ * Algorithm:
+ *   Linear Congruential Generator (LCG) — a classic, simple pseudo-random
+ *   formula: seed = (seed × 1103515245 + 12345).
+ *   The output is extracted from the middle bits to reduce bias.
+ *
+ * IMPORTANT:
+ *   ALWAYS use GameRNG.getRandomNumber() instead of Greenfoot.getRandomNumber()
+ *   for anything that affects gameplay (lane selection, spawn timing, etc.).
+ *
+ * Interacts with:
+ *   SpawnManager (lane selection), Time_RewindManager (save/restore state),
+ *   Time_FrameSnapshot (stores the seed)
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+public class GameRNG {
+
+    /** The current state of the generator.  All randomness derives from this. */
+    private static long currentSeed;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // INITIALISATION
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Seeds the generator with the current system clock time.
+     * Call this ONCE at the start of a new game session (in PlayingState.enter()).
+     * Different sessions get different sequences; within one session the
+     * sequence is fully deterministic and rewind-safe.
+     */
+    public static void randomize() {
+        currentSeed = System.currentTimeMillis();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // TIME MACHINE SUPPORT
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the current seed state.  Called by Time_RewindManager when
+     * recording a Time_FrameSnapshot so the RNG state can be saved.
+     */
+    public static long getState() {
+        return currentSeed;
+    }
+
+    /**
+     * Restores the seed to a previously saved value.  Called by
+     * Time_RewindManager when replaying a snapshot, guaranteeing that any
+     * subsequent calls to getRandomNumber() produce the same results as
+     * the original playthrough.
+     *
+     * @param oldSeed  The seed value saved from a past Time_FrameSnapshot.
+     */
+    public static void restoreState(long oldSeed) {
+        currentSeed = oldSeed;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CORE USAGE
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns a pseudo-random integer in the range [0, max).
+     * Advances the internal seed by one step.
+     *
+     * USE THIS instead of Greenfoot.getRandomNumber() for all gameplay logic.
+     *
+     * @param max  The exclusive upper bound.  getRandomNumber(5) returns 0–4.
+     * @return     A pseudo-random integer in [0, max), or 0 if max ≤ 0.
+     */
+    public static int getRandomNumber(int max) {
+        if (max <= 0) return 0;
+        // LCG step: advance the seed by the standard multiplier + increment
+        currentSeed = (currentSeed * 1103515245L + 12345L);
+        // Extract bits 16–46 (the most statistically uniform bits in an LCG)
+        return (int)(Math.abs(currentSeed / 65536) % max);
+    }
+}
+
+
+
+==================================================
+FILE: ./MenuState.java
+==================================================
+
+import greenfoot.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MenuState implements GameState {
+
+    private List<Actor> uiElements = new ArrayList<>();
+
+    @Override
+    public void enter(MyWorld world) {
+        // Set a background colour or image
+        world.setBackground(new GreenfootImage(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
+        world.getBackground().setColor(new Color(20, 20, 40)); // dark blue
+        world.getBackground().fill();
+
+        int midX = world.getWidth() / 2;
+        int midY = world.getHeight() / 2;
+
+        // Title
+        addUI(world, new UIText("MY GAME", GameConfig.s(60), Color.WHITE),
+              midX, midY - GameConfig.s(80));
+
+        // High score display
+        int best = SaveManager.getInt("all_time_high");
+        addUI(world, new UIText("BEST: " + best, GameConfig.s(22), Color.YELLOW),
+              midX, midY);
+
+        // Prompt
+        addUI(world, new UIText("[ ENTER : PLAY ]", GameConfig.s(24), Color.GREEN),
+              midX, midY + GameConfig.s(80));
+
+        // Optional: start menu music
+        // AudioManager.playLoop("menu_bgm");
+    }
+
+    @Override
+    public void update(MyWorld world) {
+        String key = Greenfoot.getKey();
+
+        if ("enter".equals(key)) {
+            world.getGSM().changeState(new PlayingState());
+        }
+    }
+
+    @Override
+    public void exit(MyWorld world) {
+        world.removeObjects(uiElements);
+        uiElements.clear();
+        // AudioManager.stop("menu_bgm");
+    }
+
+    private void addUI(MyWorld world, Actor a, int x, int y) {
+        world.addObject(a, x, y);
+        uiElements.add(a);
+    }
+}
+
+
+==================================================
+FILE: ./SaveManager.java
+==================================================
+
+import java.util.Properties;
+import java.io.*;
+
+public class SaveManager {
+    private static final String SAVE_FILE = "user_stats.txt";
+    private static final String CHECKSUM_KEY = "integrity";
+    private static Properties stats = new Properties();
+
+    public static void load() {
+        try (FileInputStream in = new FileInputStream(SAVE_FILE)) {
+            stats.load(in);
+            if (!verifyChecksum()) {
+                System.out.println("Save file tampered — resetting.");
+                stats.clear();
+                save();
+            }
+        } catch (IOException e) {
+            System.out.println("New archive created.");
+        }
+    }
+
+    public static void save() {
+        stats.remove(CHECKSUM_KEY);           // strip old checksum before hashing
+        stats.setProperty(CHECKSUM_KEY, String.valueOf(computeChecksum()));
+        try (FileOutputStream out = new FileOutputStream(SAVE_FILE)) {
+            stats.store(out, "DIO-DGE IT PERSISTENT STATS");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static int computeChecksum() {
+        // Hash every key=value pair except the checksum itself
+        StringBuilder sb = new StringBuilder();
+        for (String key : stats.stringPropertyNames()) {
+            if (!key.equals(CHECKSUM_KEY))
+                sb.append(key).append("=").append(stats.getProperty(key)).append(";");
+        }
+        return sb.toString().hashCode() ^ 0xDEADBEEF; // XOR makes it less obvious
+    }
+
+    private static boolean verifyChecksum() {
+        if (!stats.containsKey(CHECKSUM_KEY)) return false;
+        try {
+            int stored = Integer.parseInt(stats.getProperty(CHECKSUM_KEY));
+            stats.remove(CHECKSUM_KEY);           // remove before recomputing
+            boolean valid = (computeChecksum() == stored);
+            stats.setProperty(CHECKSUM_KEY, String.valueOf(stored)); // put back
+            return valid;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public static int    getInt(String key)            { return Integer.parseInt(stats.getProperty(key, "0")); }
+    public static void   setInt(String key, int value) { stats.setProperty(key, String.valueOf(value)); }
+    public static void   addInt(String key, int amount){ setInt(key, getInt(key) + amount); }
+    
+    /*
+    public static String getFavoriteCharacter() {
+        String fav = "None";
+        int maxTime = -1;
+        for (CharacterConfig config : CharacterConfig.values()) {
+            int time = getInt("time_" + config.name());
+            if (time > maxTime) { maxTime = time; fav = config.displayName; }
+        }
+        return fav;
+    }
+    */
+   
+    public static String getUsername() {
+        return stats.getProperty("username", "Unknown Subject");
+    }
+    
+    public static void setUsername(String name) {
+        stats.setProperty("username", name);
+        save();
+    }
+    
+    public static boolean hasUsername() {
+        return stats.containsKey("username");
+    }
+        
+}
+
+
+==================================================
+FILE: ./GameConfig.java
+==================================================
+
+public class GameConfig {
+
+    // ── World Size ────────────────────────────────────────────────────────────
+    public static final int WORLD_WIDTH  = 800;   // adjust to your game
+    public static final int WORLD_HEIGHT = 500;   // adjust to your game
+    
+    // Volume
+    public static final int MASTER_VOLUME = 80;
+
+    // ── Scale ─────────────────────────────────────────────────────────────────
+    // Change this one number to scale the whole game up or down.
+    // 1.0 = normal. 1.5 = 50% bigger. 0.75 = 25% smaller.
+    public static final double SCALE = 1.0;
+
+    /** Scales any pixel value by SCALE. Use for all sizes and positions. */
+    public static int s(int value) {
+        return (int)(value * SCALE);
+    }
+
+    // ── Game Constants ────────────────────────────────────────────────────────
+    // Add your game's constants here as you build.
+    // Example:
+    // public static final int PLAYER_SPEED = s(4);
+    // public static final int ENEMY_SPEED  = s(3);
+
+    // ── Debug ─────────────────────────────────────────────────────────────────
+    public static boolean DEBUG_MODE = false;
+}
+
+
+==================================================
+FILE: ./ScoreManager.java
+==================================================
+
+import greenfoot.*;
+
+public class ScoreManager {
+
+    /** The player's current score in the ongoing game session. */
+    private static int score = 0;
+
+    /** The best score achieved since the project was launched. Not persisted to disk. */
+    private static int highScore = 0;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SCORE MANIPULATION
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Adds points to the current score.
+     * Called by Roadroller.checkRemove() (+1 per car dodged),
+     * Train.checkRemove() (+5 per ambulance dodged),
+     * and TheWorldStand.act() (+2 per obstacle destroyed by the Stand).
+     *
+     * @param amount  Number of points to add (should be positive).
+     */
+    public static void addScore(int amount) {
+        score += amount;
+    }
+
+    /**
+     * Directly sets the score.
+     * Used ONLY by the time-rewind system (Time_RewindManager) to restore
+     * the score to its value at a past frame.  Do not call this from gameplay code.
+     *
+     * @param s  The score value to restore.
+     */
+    public static void setScore(int s) { score = s; }
+
+    /**
+     * Resets the current score to 0, copying it to highScore first if it's
+     * a new record.  Called at the start of each new PlayingState.
+     */
+    public static void reset() {
+        if (score > highScore) highScore = score;
+        score = 0;
+    }
+
+    /**
+     * Updates highScore if the current score exceeds it.
+     * Called by GameOverState.enter() to freeze the best score for display.
+     * reset() already does this, but GameOverState calls this separately
+     * for clarity.
+     */
+   public static void updateHighScore() {
+        
+        if (score > highScore) highScore = score;
+        
+        // 2. THE FIX: Switch from DataManager to SaveManager
+        int allTimeBest = SaveManager.getInt("all_time_high"); 
+        if (score > allTimeBest) {
+            SaveManager.setInt("all_time_high", score);
+            SaveManager.save(); // Save to user_stats.txt
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GETTERS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** @return The current running score. */
+    public static int getScore()     { return score; }
+
+    /** @return The best score achieved this session. */
+    public static int getHighScore() { return highScore; }
+    
+    
+}
+
+
+
+==================================================
+FILE: ./UIText.java
+==================================================
+
+import greenfoot.*;
+import java.util.*;
+
+public class UIText extends Actor {
+
+    private String text;
+    private int fontSize;
+    private Color color;
+    private int maxWidth;
+
+    public UIText(String text, int fontSize, Color color, int maxWidth) {
+        this.text = text;
+        this.fontSize = fontSize;
+        this.color = color;
+        this.maxWidth = maxWidth;
+        updateImage();
+    }
+
+    public UIText(String text, int fontSize, Color color) {
+        this(text, fontSize, color, 0);
+    }
+
+    public void setText(String newText) {
+        if (!newText.equals(this.text)) {
+            this.text = newText;
+            updateImage();
+        }
+    }
+    
+    // NEW METHOD
+    public void setColor(Color newColor) {
+        if (!this.color.equals(newColor)) {
+            this.color = newColor;
+            updateImage();
+        }
+    }
+
+    private void updateImage() {
+        if (maxWidth <= 0) {
+            setImage(new GreenfootImage(text, fontSize, color, new Color(0, 0, 0, 0)));
+            return;
+        }
+
+        List<String> lines = wrapText(text, fontSize, maxWidth);
+        int lineSpacing = 2;
+        int totalHeight = lines.size() * (fontSize + lineSpacing);
+        
+        GreenfootImage finalImg = new GreenfootImage(maxWidth, totalHeight);
+        
+        for (int i = 0; i < lines.size(); i++) {
+            GreenfootImage lineImg = new GreenfootImage(lines.get(i), fontSize, color, new Color(0,0,0,0));
+            int x = (maxWidth - lineImg.getWidth()) / 2;
+            int y = i * (fontSize + lineSpacing);
+            finalImg.drawImage(lineImg, x, y);
+        }
+        setImage(finalImg);
+    }
+
+    private List<String> wrapText(String text, int size, int width) {
+        List<String> lines = new ArrayList<>();
+        String[] words = text.split(" ");
+        String currentLine = "";
+
+        for (String word : words) {
+            String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
+            GreenfootImage measure = new GreenfootImage(testLine, size, Color.BLACK, Color.WHITE);
+            if (measure.getWidth() > width) {
+                lines.add(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        }
+        lines.add(currentLine);
+        return lines;
+    }
+}
+
+
+==================================================
+FILE: ./GameTimer.java
+==================================================
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * GameTimer.java  —  A REUSABLE COUNTDOWN TIMER FOR ABILITIES AND EVENTS
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Role:
+ *   GameTimer is one of the most widely used utility classes in the project.
+ *   It converts "seconds" into "frames" (since Greenfoot runs at ~60fps) and
+ *   provides start/stop/reset controls, expiry checks, and percentage helpers.
+ *
+ * CRITICAL FEATURE: Game-state awareness.
+ *   The update() method ONLY ticks while the GSM is in PlayingState.
+ *   This means ALL timers automatically freeze during:
+ *     - The main menu
+ *     - The character select screen
+ *     - The time-stop pause (PausedState)
+ *     - The game-over screen
+ *   You get this for free — no extra code needed in any ability or actor.
+ *
+ * Typical usage patterns:
+ *
+ *   ONE-SHOT ABILITY DURATION:
+ *     private GameTimer durationTimer = new GameTimer(3.5, false);
+ *     // To fire: durationTimer.reset(); durationTimer.start();
+ *     // To check: if (durationTimer.isExpired()) { ... stop the ability ... }
+ *
+ *   COOLDOWN AFTER ABILITY:
+ *     private GameTimer cooldownTimer = new GameTimer(5.0, false);
+ *     // After ability ends: cooldownTimer.reset(); cooldownTimer.start();
+ *     // Gate: if (!cooldownTimer.isActive()) { ... allow activation ... }
+ *
+ *   LOOPING SPAWN TIMER (SpawnManager equivalent if used here):
+ *     private GameTimer spawnTimer = new GameTimer(1.5, true);
+ *     spawnTimer.start();
+ *     spawnTimer.update(world);
+ *     if (spawnTimer.isExpired()) { spawnSomething(); } // auto-resets because loop=true
+ *
+ * Time Machine support:
+ *   getRemainingFrames() and setRemainingFrames() allow the rewind system to
+ *   save and restore timer progress precisely across snapshots.
+ *
+ * Interacts with:
+ *   Every ability class, GenericPlayer, Exclaimation, and any class
+ *   that needs a duration, cooldown, or life timer.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+import greenfoot.*;
+
+public class GameTimer {
+
+    /** The full duration of the timer, converted to frames (seconds × 60). */
+    private int totalFrames;
+
+    /** How many frames remain before the timer expires.  Counts down to 0. */
+    private int remainingFrames;
+
+    /** Whether the timer is currently counting down. */
+    private boolean active;
+
+    /**
+     * If true, the timer resets itself to totalFrames when it reaches 0
+     * (like an alarm that keeps ringing).
+     * If false, it expires once and stays at 0 until manually reset.
+     */
+    private boolean loop;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CONSTRUCTOR
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Creates a new timer, but does NOT start it.  Call start() when ready.
+     *
+     * @param seconds  The duration in real-world seconds. Converted internally to frames.
+     * @param loop     True = auto-reset on expiry (repeating). False = one-shot.
+     */
+    public GameTimer(double seconds, boolean loop) {
+        this.totalFrames     = (int)(seconds * 60); // 60 acts per second
+        this.remainingFrames = totalFrames;
+        this.loop            = loop;
+        this.active          = false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CONTROLS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Starts the timer ticking.  Does not reset remainingFrames. */
+    public void start() { this.active = true; }
+
+    /** Stops the timer.  Remaining frames are preserved. */
+    public void stop()  { this.active = false; }
+
+    /** Resets remainingFrames back to totalFrames.  Does not start or stop. */
+    public void reset() { this.remainingFrames = totalFrames; }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // THE ENGINE — must be called every frame from an actor's act() or a
+    //              state's update() for the timer to count down.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Ticks the timer down by one frame.
+     * ONLY ticks if: (a) the timer is active, AND (b) the game is in PlayingState.
+     * This automatic game-state check is what freezes all timers during pause/menu.
+     *
+     * When remainingFrames reaches 0:
+     *   - If loop=true : resets and continues running.
+     *   - If loop=false: sets active=false and stays at 0 (expired).
+     *
+     * @param world  Needed to check the current game state via the GSM.
+     */
+    public void update(MyWorld world) {
+        if (!active) return;
+        
+        // Only tick while PlayingState is active
+        if (!world.getGSM().isState(PlayingState.class)) return;
+    
+        if (remainingFrames > 0) {
+            remainingFrames--;
+        } else if (loop) {
+            reset();
+        } else {
+            active = false;
+        }
+    }
+
+    /**
+     * Force-ticks the timer regardless of game state (ignores pause/menu).
+     * Currently unused in main code, but available for special cases.
+     */
+    public void forceTick() {
+        if (remainingFrames > 0) remainingFrames--;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // QUERY METHODS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** @return True when the timer has counted all the way down to 0. */
+    public boolean isExpired() { return remainingFrames <= 0; }
+
+    /** @return True while the timer is actively counting down. */
+    public boolean isActive()  { return active; }
+
+    /** @return Remaining time in seconds (remainingFrames / 60). */
+    public double getSecondsRemaining() { return remainingFrames / 60.0; }
+
+    /**
+     * Returns how far through the timer we are, from 0.0 (just started)
+     * to 1.0 (fully expired).  Useful for drawing progress/cooldown bars.
+     *
+     * Example — a cooldown bar that shrinks as time passes:
+     *   double progress = cooldownTimer.getPercentComplete();
+     *   int barWidth = (int)(100 * (1.0 - progress)); // shrinks from 100 to 0
+     */
+    public double getPercentComplete() {
+        return (double)(totalFrames - remainingFrames) / totalFrames;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // TIME MACHINE SUPPORT  (save/restore for the rewind system)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** @return The exact number of frames left.  Saved into rewind snapshots. */
+    public int getRemainingFrames() { return remainingFrames; }
+
+    /**
+     * Directly sets remaining frames.  Used by restoreState() in ability classes
+     * to rewind the timer to its past value.
+     */
+    public void setRemainingFrames(int frames) { this.remainingFrames = frames; }
+
+    /** @return The full duration in frames (totalFrames). Rarely needed externally. */
+    public int getTotalFrames() { return totalFrames; }
+
+    /**
+     * Changes the timer's duration and immediately resets remainingFrames to match.
+     * Useful when you want to reuse a timer with a different duration.
+     *
+     * @param seconds  The new duration in real-world seconds.
+     */
+    public void setDuration(double seconds) {
+        this.totalFrames = (int)(seconds * 60);
+        reset();
+    }
+    
+    public int getFramesElapsed() {
+        // totalFrames is the starting time, remainingFrames is what's left.
+        // The difference is how much time has passed!
+        return totalFrames - remainingFrames;
+    }
+}
+
+
+
+==================================================
+FILE: ./Player.java
+==================================================
+
+import greenfoot.*;
+
+public class Player extends Actor {
+
+    // ── Movement ──────────────────────────────────────────────────────────────
+    private int speed = GameConfig.s(4);
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    private boolean isDead = false;
+
+    /** How long after death before transitioning to Game Over */
+    private GameTimer deathTimer = new GameTimer(2.0, false);
+
+    // ── Constructor ───────────────────────────────────────────────────────────
+
+    public Player() {
+        // Draw a simple placeholder sprite (replace with a real image later)
+        GreenfootImage img = new GreenfootImage(GameConfig.s(40), GameConfig.s(40));
+        img.setColor(Color.CYAN);
+        img.fillOval(0, 0, img.getWidth(), img.getHeight());
+        setImage(img);
+    }
+
+    // ── Act ───────────────────────────────────────────────────────────────────
+
+    @Override
+    public void act() {
+        MyWorld world = (MyWorld) getWorld();
+        if (world == null) return;
+
+        // Only run during PlayingState
+        if (!world.getGSM().isState(PlayingState.class)) return;
+
+        if (isDead) {
+            handleDeath(world);
+        } else {
+            handleMovement();
+        }
+    }
+
+    // ── Movement ──────────────────────────────────────────────────────────────
+
+    private void handleMovement() {
+        // Arrow key movement — modify this for your game's control scheme
+        if (Greenfoot.isKeyDown("up")    && getY() > GameConfig.s(20))
+            setLocation(getX(), getY() - speed);
+        if (Greenfoot.isKeyDown("down")  && getY() < getWorld().getHeight() - GameConfig.s(20))
+            setLocation(getX(), getY() + speed);
+        if (Greenfoot.isKeyDown("left")  && getX() > GameConfig.s(20))
+            setLocation(getX() - speed, getY());
+        if (Greenfoot.isKeyDown("right") && getX() < getWorld().getWidth() - GameConfig.s(20))
+            setLocation(getX() + speed, getY());
+    }
+
+    // ── Death ─────────────────────────────────────────────────────────────────
+
+    public void die() {
+        if (isDead) return; // already dead, ignore
+        isDead = true;
+
+        // Visual feedback — turn red
+        GreenfootImage img = new GreenfootImage(GameConfig.s(40), GameConfig.s(40));
+        img.setColor(Color.RED);
+        img.fillOval(0, 0, img.getWidth(), img.getHeight());
+        setImage(img);
+
+        // Start the death countdown
+        deathTimer.reset();
+        deathTimer.start();
+
+        // AudioManager.play("death_sound");
+    }
+
+    private void handleDeath(MyWorld world) {
+        deathTimer.update(world);
+        if (deathTimer.isExpired()) {
+            world.getGSM().changeState(new GameOverState());
+        }
+    }
+
+    // ── Queries ───────────────────────────────────────────────────────────────
+
+    public boolean isDead() { return isDead; }
+}
+
+
+==================================================
+FILE: ./GameStateManager.java
+==================================================
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * GameStateManager.java  —  THE STATE MACHINE THAT DRIVES THE GAME
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Role:
+ *   Manages a stack of GameState objects and determines which state is
+ *   currently running.  All game logic flows through here.
+ *
+ * Why a Stack?
+ *   A Stack follows Last-In-First-Out (LIFO) order — like a stack of plates.
+ *   This is perfect for nested states:
+ *     - PlayingState is running (bottom of stack).
+ *     - Player presses W → PausedState is PUSHED on top.
+ *     - Only PausedState updates; PlayingState freezes underneath.
+ *     - Player presses W again → PausedState is POPPED; PlayingState resumes.
+ *   Without a stack, implementing "pause over play" would require messy booleans.
+ *
+ * pushState  vs  changeState:
+ *   pushState  — keeps the state below it alive (use for overlays like Pause).
+ *   changeState— replaces the current state entirely (use for Menu→Game→GameOver).
+ *
+ * Interacts with:
+ *   MyWorld (owns this), every GameState implementation
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+import greenfoot.*;
+import java.util.Stack;
+
+public class GameStateManager {
+
+    /** The stack of active states.  Only the top state is updated each frame. */
+    private Stack<GameState> stateStack;
+
+    /** Reference to the world, passed to every state's enter/update/exit calls. */
+    private MyWorld world;
+
+    /**
+     * Creates a new GameStateManager for the given world.
+     * @param world  The MyWorld instance this manager belongs to.
+     */
+    public GameStateManager(MyWorld world) {
+        this.stateStack = new Stack<>();
+        this.world = world;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // STACK OPERATIONS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Pushes a new state onto the top of the stack and enters it.
+     * The previous state stays in the stack — it just stops updating.
+     * Use this for overlaying states (e.g., Pause over Playing).
+     *
+     * @param state  The new state to activate.
+     */
+    public void pushState(GameState state) {
+        stateStack.push(state);
+        state.enter(world);
+    }
+
+    /**
+     * Removes the top state from the stack and exits it.
+     * The state below it becomes active again automatically.
+     * Use this to "dismiss" an overlay (e.g., un-pause).
+     */
+    public void popState() {
+        if (!stateStack.isEmpty()) {
+            GameState popped = stateStack.pop();
+            popped.exit(world);
+        }
+    }
+
+    /**
+     * Replaces the current top state with a new one.
+     * Exits the old state before entering the new one.
+     * Use this for clean transitions (Menu → CharacterSelect → Playing → GameOver).
+     *
+     * @param state  The new state to switch to.
+     */
+    public void changeState(GameState state) {
+        if (!stateStack.isEmpty()) {
+            stateStack.pop().exit(world);
+        }
+        stateStack.push(state);
+        state.enter(world);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PER-FRAME UPDATE
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Called once per frame by MyWorld.act().
+     * Only the state on TOP of the stack gets updated — all others are frozen.
+     */
+    public void update() {
+        if (!stateStack.isEmpty()) {
+            stateStack.peek().update(world);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // QUERY HELPERS  (used by actors to check "what state are we in?")
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns true if the top state is an instance of the given class.
+     * This is the standard guard used at the top of every actor's act():
+     *   if (!world.getGSM().isState(PlayingState.class)) return;
+     *
+     * @param stateClass  The class to check against (e.g., PlayingState.class).
+     * @return            True if the top state is of that type.
+     */
+    public boolean isState(Class<?> stateClass) {
+        if (stateStack.isEmpty()) return false;
+        return stateClass.isInstance(stateStack.peek());
+    }
+
+    /**
+     * Returns the current top state without removing it.
+     * Returns null if the stack is empty.
+     * Useful when you need to call a method specific to a known state type.
+     */
+    public GameState peekState() {
+        return stateStack.isEmpty() ? null : stateStack.peek();
+    }
+}
+
+
+
+==================================================
+FILE: ./PlayingState.java
+==================================================
+
+import greenfoot.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PlayingState implements GameState {
+
+    /** Track UI elements so we can remove them cleanly on exit */
+    private List<Actor> uiElements = new ArrayList<>();
+
+    /** Score display label */
+    private UIText scoreDisplay;
+
+    /** Tracks when this session started (for playtime saving) */
+    private long sessionStartTime;
+
+    @Override
+    public void enter(MyWorld world) {
+        // ── Reset everything ──────────────────────────────────────────────────
+        world.removeObjects(world.getObjects(null)); // clear all actors
+        ScoreManager.reset();
+        sessionStartTime = System.currentTimeMillis();
+
+        // ── Background ────────────────────────────────────────────────────────
+        world.setBackground(new GreenfootImage(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
+        world.getBackground().setColor(new Color(30, 30, 50));
+        world.getBackground().fill();
+
+        // ── Spawn the player ──────────────────────────────────────────────────
+        Player player = new Player();
+        world.addObject(player, world.getWidth() / 2, world.getHeight() / 2);
+
+        // ── UI ────────────────────────────────────────────────────────────────
+        scoreDisplay = new UIText("SCORE: 0", GameConfig.s(22), Color.WHITE);
+        world.addObject(scoreDisplay, GameConfig.s(60), GameConfig.s(20));
+        uiElements.add(scoreDisplay);
+
+        // ── Music ─────────────────────────────────────────────────────────────
+        // AudioManager.playLoop("game_bgm");
+
+        // ── Seed the random number generator ─────────────────────────────────
+        GameRNG.randomize();
+    }
+
+    @Override
+    public void update(MyWorld world) {
+        // Update the score display every frame
+        scoreDisplay.setText("SCORE: " + ScoreManager.getScore());
+
+        // Add your per-frame gameplay logic here:
+        // - Spawning enemies
+        // - Difficulty scaling
+        // - Checking win/lose conditions
+    }
+
+    @Override
+    public void exit(MyWorld world) {
+        // Save playtime
+        long playedMs = System.currentTimeMillis() - sessionStartTime;
+        int playedSeconds = (int)(playedMs / 1000);
+        SaveManager.addInt("total_playtime", playedSeconds);
+        SaveManager.save();
+
+        // Update high score
+        ScoreManager.updateHighScore();
+
+        // Remove UI
+        world.removeObjects(uiElements);
+        uiElements.clear();
+
+        // AudioManager.stop("game_bgm");
+    }
+}
+
+
+==================================================
+FILE: ./GameState.java
+==================================================
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * GameState.java  —  THE CONTRACT ALL GAME STATES MUST FOLLOW
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Role:
+ *   A Java "interface" is a contract.  Any class that says
+ *   "implements GameState" MUST provide all three methods below,
+ *   or the code will not compile.
+ *
+ * The three-method lifecycle mirrors how a real game state works:
+ *   enter()  — "Set up the scene."  Called once when the state becomes active.
+ *   update() — "Run the scene."  Called every frame (~60 times/sec) while active.
+ *   exit()   — "Clean up the scene."  Called once when the state is removed.
+ *
+ * Current implementations:
+ *   MenuState, CharacterSelectState, PlayingState, PausedState, GameOverState
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+import greenfoot.*;
+
+public interface GameState {
+
+    /**
+     * Called ONCE when this state is pushed onto the GameStateManager stack.
+     * Use this to: add UI actors, start music, reset variables, spawn the player.
+     *
+     * @param world  The game world; use it to add/remove actors.
+     */
+    void enter(MyWorld world);
+
+    /**
+     * Called EVERY FRAME (~60 times/sec) while this state is the top of the stack.
+     * This is the main logic loop for the state.
+     * Handle input, move things, check collisions — all here.
+     *
+     * @param world  The game world; use it to add/remove actors or query state.
+     */
+    void update(MyWorld world);
+
+    /**
+     * Called ONCE when this state is popped off the GameStateManager stack.
+     * Use this to: remove actors, stop music, save data.
+     * Always clean up what enter() created.
+     *
+     * @param world  The game world; use it to remove actors.
+     */
+    void exit(MyWorld world);
+}
+
+
+
+==================================================
+FILE: ./AudioManager.java
+==================================================
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * AudioManager.java  —  CENTRALISED AUDIO LOADING AND PLAYBACK
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Role:
+ *   A static utility class that pre-loads all sounds at startup (init()),
+ *   then provides play/stop/loop/pause methods accessed from anywhere.
+ *
+ * Two sound types:
+ *   Single sounds (HashMap<String, GreenfootSound>):
+ *     One sound file per key.  Used for music (BGM) and one-shot SFX.
+ *     play() stops and restarts; playLoop() loops continuously.
+ *
+ *   Voice pools (HashMap<String, List<GreenfootSound>>):
+ *     Multiple sounds per key.  playPool() picks one at random.
+ *     Used for death voice lines and boss battle cries.
+ *
+ * Master volume:
+ *   Every sound has a "base volume" defined in init().
+ *   Actual volume = (base × masterVolume) / 200.
+ *   Changing masterVolume updates all sounds immediately.
+ *
+ * Pre-loading:
+ *   init() calls play()/stop() on every sound immediately after loading.
+ *   This forces Greenfoot to decode the audio file into memory so the first
+ *   real playback has no lag spike.
+ *
+ * Rewind audio handling (setAllSoundsPaused):
+ *   During rewind, all sounds are muted.  The BGM is paused (remembered),
+ *   everything else is stopped (forgotten).  On resume, only the remembered
+ *   BGM is restarted.
+ *   
+ * Interacts with:
+ *   PlayingState (music start/stop, rewind audio control),
+ *   Ability_MadeInHeaven (speed_up_time sound),
+ *   Ability_StandPunch (muda_barrage sound),
+ *   Roadroller / Train (car_crash sound),
+ *   GenericPlayer (death voice pool),
+ *   GameConfig (MASTER_VOLUME), MyWorld (init() called in constructor)
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+import greenfoot.*;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
+
+public class AudioManager {
+
+    /** All single-sound entries, keyed by a short string identifier. */
+    private static HashMap<String, GreenfootSound>        sounds      = new HashMap<>();
+    /** All voice pool entries, keyed by pool name; each pool has multiple clips. */
+    private static HashMap<String, List<GreenfootSound>>  voicePools  = new HashMap<>();
+
+    /** Base (unscaled) volume for each single sound.  Stored so masterVolume rescaling works. */
+    private static HashMap<String, Integer>               baseVolumes     = new HashMap<>();
+    /** Base volume for each voice pool. */
+    private static HashMap<String, Integer>               basePoolVolumes = new HashMap<>();
+
+    /** Sounds that were playing just before a rewind pause — resumed after rewind. */
+    private static List<GreenfootSound>                   activeBeforePause = new ArrayList<>();
+
+    /** Global volume multiplier (0–200).  Set from GameConfig.MASTER_VOLUME. */
+    private static int masterVolume = GameConfig.MASTER_VOLUME;
+    
+    
+    // ─────────────────────────────────────────────────────────────────────────
+    // INITIALISATION — called once from MyWorld constructor
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Pre-loads all game sounds into RAM.
+     * Must be called ONCE before any sound is played.
+     * Each sound is play()ed and immediately stop()ped to force Greenfoot
+     * to decode it, eliminating first-play lag spikes.
+     */
+    public static void init() {
+        
+        updateAllVolumes(); // apply master volume to everything at startup
+    }
+
+    /** Loads one sound file and pre-decodes it.  Stores base volume for scaling. */
+    private static void loadSound(String key, String file, int volume) {
+        GreenfootSound s = new GreenfootSound(file);
+        s.play(); s.stop(); // pre-decode into memory
+        sounds.put(key, s);
+        baseVolumes.put(key, volume);
+    }
+
+    /** Loads a pool of sound files (one pool key, many clips) and pre-decodes all. */
+    private static void loadVoicePool(String key, String[] files, int volume) {
+        List<GreenfootSound> pool = new ArrayList<>();
+        for (String f : files) {
+            GreenfootSound s = new GreenfootSound(f);
+            s.play(); s.stop(); // pre-decode
+            pool.add(s);
+        }
+        voicePools.put(key, pool);
+        basePoolVolumes.put(key, volume);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MASTER VOLUME
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Sets the master volume and immediately updates all loaded sounds.
+     * @param level  0 (silent) to 200 (full).
+     */
+    public static void setMasterVolume(int level) {
+        masterVolume = Math.max(0, Math.min(200, level));
+        updateAllVolumes();
+    }
+
+    /** Recalculates and applies actual volume for every sound using the master level. */
+    private static void updateAllVolumes() {
+        for (String key : sounds.keySet()) {
+            sounds.get(key).setVolume((baseVolumes.get(key) * masterVolume) / 200);
+        }
+        for (String key : voicePools.keySet()) {
+            for (GreenfootSound s : voicePools.get(key)) {
+                s.setVolume((basePoolVolumes.get(key) * masterVolume) / 200);
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PLAYBACK METHODS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Plays a single sound once.  Stops and restarts it if already playing
+     * so it never overlaps itself.
+     */
+    public static void play(String key) {
+        if (sounds.containsKey(key)) {
+            GreenfootSound s = sounds.get(key);
+            if (s.isPlaying()) s.stop();
+            s.play();
+        }
+    }
+
+    /** Plays a random clip from the named voice pool. */
+    public static void playPool(String poolKey) {
+        if (voicePools.containsKey(poolKey)) {
+            List<GreenfootSound> pool = voicePools.get(poolKey);
+            pool.get(Greenfoot.getRandomNumber(pool.size())).play();
+        }
+    }
+
+    /** Starts a sound looping if it is not already playing. */
+    public static void playLoop(String key) {
+        if (sounds.containsKey(key)) {
+            GreenfootSound s = sounds.get(key);
+            if (!s.isPlaying()) s.playLoop();
+        }
+    }
+
+    /** Stops a sound entirely. */
+    public static void stop(String key) {
+        if (sounds.containsKey(key)) sounds.get(key).stop();
+    }
+
+    /** Stops every sound (single and pooled). */
+    public static void stopAll() {
+        for (GreenfootSound s : sounds.values()) s.stop();
+        for (List<GreenfootSound> pool : voicePools.values()) {
+            for (GreenfootSound s : pool) s.stop();
+        }
+    }
+
+    /** Pauses a specific looping sound (position is preserved for resume). */
+    public static void pause(String key) {
+        if (sounds.containsKey(key)) sounds.get(key).pause();
+    }
+
+    /** Resumes (or starts) a looping sound. */
+    public static void resume(String key) {
+        if (sounds.containsKey(key)) sounds.get(key).playLoop();
+    }
+
+    /**
+     * Pauses or resumes audio for the rewind system.
+     *
+     * pause=true  : saves and pauses the current character's BGM; stops all other sounds.
+     * pause=false : resumes only the sounds that were playing before pause.
+     */
+    /*
+    public static void setAllSoundsPaused(boolean pause) {
+        if (pause) {
+            activeBeforePause.clear();
+            
+            // List of possible background musics
+            String[] bgmKeys = { GameConfig.ACTIVE_CHARACTER.bgmKey, "menu_bgm" };
+    
+            for (String key : bgmKeys) {
+                if (sounds.containsKey(key) && sounds.get(key).isPlaying()) {
+                    activeBeforePause.add(sounds.get(key));
+                    sounds.get(key).pause();
+                }
+            }
+    
+            // Stop (do not pause) all other sounds (SFX)
+            for (String key : sounds.keySet()) {
+                // If it's not one of our BGMs, stop it
+                boolean isBGM = false;
+                for(String bgm : bgmKeys) if(key.equals(bgm)) isBGM = true;
+                
+                if (!isBGM && sounds.get(key).isPlaying()) {
+                    sounds.get(key).stop();
+                }
+            }
+            
+            // Stop all voice pools (cries, mudas, etc)
+            stopAllPools();
+        } else {
+            // Resume whatever was saved in the list (could be menu_bgm or character_bgm)
+            for (GreenfootSound s : activeBeforePause) {
+                s.play(); // Use play() to resume from pause point
+            }
+            activeBeforePause.clear();
+        }
+    }
+    */
+   
+    /** Helper to stop every sound in a specific pool */
+    public static void stopPool(String poolKey) {
+        if (voicePools.containsKey(poolKey)) {
+            for (GreenfootSound s : voicePools.get(poolKey)) {
+                if (s.isPlaying()) s.stop();
+            }
+        }
+    }
+
+    public static void stopAllPools() {
+        for (List<GreenfootSound> pool : voicePools.values()) {
+            for (GreenfootSound s : pool) {
+                if (s.isPlaying()) s.stop();
+            }
+        }
+    }
+
+    
+}
+
+
+
