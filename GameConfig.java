@@ -37,7 +37,7 @@ public class GameConfig {
     public static final int MASTER_VOLUME = 80;
     
     //Economy Config
-    public static final int STARTING_GOLD = 350;
+    public static final int STARTING_GOLD = 1000;
   
     // ── UNIT STATS ───────────────────────────────────────────────────────────
     public static final int BASIC_UNIT_COST = 30;
@@ -49,6 +49,22 @@ public class GameConfig {
     public static final int SNIPER_UNIT_HP = 8;
     public static final double SNIPER_UNIT_COOLDOWN = 3.0; // Shoots slow
     public static final int SNIPER_UNIT_DAMAGE = 120;       // Hits very hard
+    
+    public static final int RAILGUN_UNIT_COST = 75;
+    public static final int RAILGUN_UNIT_HP = 5;
+    public static final double RAILGUN_UNIT_COOLDOWN = 2.0; // Shoots slow, but clears waves
+    public static final int RAILGUN_UNIT_DAMAGE = 50;
+    
+    public static final int ALCHEMIST_UNIT_COST = 150;
+    public static final int ALCHEMIST_UNIT_HP = 4;
+    public static final double ALCHEMIST_UNIT_COOLDOWN = 4.0; 
+    public static final int ALCHEMIST_UNIT_DAMAGE = 70; // High impact damage
+    
+    public static final int WALL_UNIT_COST = 50;
+    public static final int WALL_UNIT_HP = 20;
+    
+    public static final int BIG_WALL_UNIT_COST = 500;
+    public static final int BIG_WALL_UNIT_HP = 200;
 
     // ── ENEMY STATS ──────────────────────────────────────────────────────────
     public static final int ENEMY_DROP = 20;
@@ -97,4 +113,10 @@ public class GameConfig {
         // ── SNIPER EFFECT STATS ──────────────────────────────────────────────────
         public static final double SNIPER_SLOW_DURATION = 3.0; // 3 seconds
         public static final float  SNIPER_SLOW_POWER    = 0.5f; // 50% speed
+        
+        public static final int SPLASH_RADIUS = s(200);
+        public static final double PUDDLE_DURATION = 7.0;
+        public static final int PUDDLE_MAX_LAYERS = 3;
+        public static final int PUDDLE_TICK_DAMAGE = 10;
+        public static final int LASER_DAMAGE = 50;
 }

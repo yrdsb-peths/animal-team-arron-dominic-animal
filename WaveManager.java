@@ -195,7 +195,8 @@ public class WaveManager {
 
         // Gold bonus scales with wave number
         CurrencyManager.earn(WAVE_CLEAR_BONUS + currentWave * 2);
-
+        //Gain 1 score for each wave
+        ScoreManager.addScore(1); 
         // AudioManager.play("wave_clear");
     }
 

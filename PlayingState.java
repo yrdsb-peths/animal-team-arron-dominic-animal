@@ -84,28 +84,16 @@ public class PlayingState implements GameState {
     }
     
     private void createUnitMenu(MyWorld world) {
-        // Data definition: {ID, Cost, Color, Key}
-        Object[][] menuData = {
-            {1, GameConfig.BASIC_UNIT_COST, Color.GREEN, "1"},
-            {2, GameConfig.SNIPER_UNIT_COST, Color.MAGENTA, "2"}
-        };
-    
         int startX = GameConfig.s(40);
         int startY = GameConfig.s(100);
         int spacing = GameConfig.s(70);
-        int nextSlot = 2; // We have 2 units, so this is the 3rd slot
     
-        UICancelButton cancelBtn = new UICancelButton(placementManager);
-        world.addObject(cancelBtn, startX, startY + (nextSlot * spacing));
-        uiElements.add(cancelBtn);
-        
-        for (int i = 0; i < menuData.length; i++) {
+        // Automatically create a UI Card for EVERY unit in the Registry
+        for (int i = 0; i < UnitRegistry.roster.size(); i++) {
+            UnitRegistry.UnitData data = UnitRegistry.roster.get(i);
+            
             UIUnitCard card = new UIUnitCard(
-                (int)menuData[i][0], 
-                (int)menuData[i][1], 
-                (Color)menuData[i][2], 
-                (String)menuData[i][3], 
-                placementManager
+                data.id, data.cost, data.color, data.key, placementManager
             );
             world.addObject(card, startX, startY + (i * spacing));
             uiElements.add(card);

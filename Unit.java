@@ -90,6 +90,14 @@ public abstract class Unit extends Actor {
     
         if (health <= 0) die();
     }
+    
+    protected void setNormalImage(GreenfootImage newImg) {
+        this.normalImage = new GreenfootImage(newImg);
+        // Create a new hurt image based on the new look
+        this.hurtImage = new GreenfootImage(normalImage);
+        this.hurtImage.setColor(new Color(255, 0, 0, 100));
+        this.hurtImage.fill();
+    }
 
     public void die() {
         if (!isDead) {
