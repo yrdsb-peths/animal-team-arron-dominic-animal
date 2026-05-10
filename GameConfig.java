@@ -37,12 +37,12 @@ public class GameConfig {
     public static final int MASTER_VOLUME = 80;
     
     //Economy Config
-    public static final int STARTING_GOLD = 1000;
+    public static final int STARTING_GOLD = 10000;
   
     // ── UNIT STATS ───────────────────────────────────────────────────────────
-    public static final int BASIC_UNIT_COST = 30;
+    public static final int BASIC_UNIT_COST = 50;
     public static final int BASIC_UNIT_HP = 3;
-    public static final double BASIC_UNIT_COOLDOWN = 1.0; // Shoots every 1.5 seconds
+    public static final double BASIC_UNIT_COOLDOWN = 0.8; // Shoots every 0.8 seconds
     public static final int BASIC_UNIT_DAMAGE = 20;
     
     public static final int SNIPER_UNIT_COST = 100;
@@ -111,12 +111,12 @@ public class GameConfig {
     public static final int TANK_CHANCE_MAX    = 40;
     //Effect Config 
         // ── SNIPER EFFECT STATS ──────────────────────────────────────────────────
-        public static final double SNIPER_SLOW_DURATION = 3.0; // 3 seconds
-        public static final float  SNIPER_SLOW_POWER    = 0.5f; // 50% speed
+        public static final double SNIPER_SLOW_DURATION = 5.0; // 3 seconds
+        public static final float  SNIPER_SLOW_POWER    = 0.2f; // 20% speed
         
         public static final int SPLASH_RADIUS = s(200);
         public static final double PUDDLE_DURATION = 7.0;
-        public static final int PUDDLE_MAX_LAYERS = 3;
+        public static final int PUDDLE_MAX_LAYERS = 5;
         public static final int PUDDLE_TICK_DAMAGE = 10;
-        public static final int LASER_DAMAGE = 50;
+        public static final int LASER_DAMAGE = 100;
 }

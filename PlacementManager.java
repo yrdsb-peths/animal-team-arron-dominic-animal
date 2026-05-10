@@ -56,14 +56,26 @@ public class PlacementManager {
     private void attemptPlacement(MyWorld world, int x, int y) {
         int col = LaneManager.colFromX(x);
         int lane = LaneManager.laneFromY(y);
-
-        if (col == -1 || LaneManager.isOccupied(lane, col)) return; 
-
-        // Automatically get the right Cost and Unit Class from the Registry
+    
+        if (col == -1) return;
+    
+        // Look up the unit currently in this spot
+        Unit existingUnit = LaneManager.getUnitAt(lane, col);
         UnitRegistry.UnitData data = UnitRegistry.getById(selectedUnit);
-
+    
+        // SPECIAL LOGIC: Stacking Basic Units
+        if (selectedUnit == 1 && existingUnit instanceof BasicUnit) {
+            if (CurrencyManager.spend(data.cost)) {
+                ((BasicUnit)existingUnit).addStack();
+                return; // Exit early, we don't need to create a new object
+            }
+        }
+    
+        // NORMAL LOGIC: Block if occupied by anything else
+        if (existingUnit != null) return; 
+    
         if (CurrencyManager.spend(data.cost)) {
-            Unit u = data.spawner.create(lane, col); // Magically creates the correct unit!
+            Unit u = data.spawner.create(lane, col);
             LaneManager.occupy(lane, col, u);
             world.addObject(u, LaneManager.getCellX(col), LaneManager.getLaneY(lane));
         }
