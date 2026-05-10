@@ -158,19 +158,19 @@ public class GameConfig {
     public static final int SHIELD_WAVE_MIN      = 4;     // Starts appearing wave 4
     public static final int SHIELD_CHANCE_START  = 2;     // 2% chance at wave 4
     public static final int SHIELD_CHANCE_GROWTH = 1;     // force Alchemist use
-    public static final int SHIELD_CHANCE_MAX    = 10;
+    public static final int SHIELD_CHANCE_MAX    = 20;
 
     // KAMIKAZE / WALL KAMIKAZE (Threatens Walls)
     public static final int KAMIKAZE_WAVE_MIN      = 3;    // Starts appearing wave 3
-    public static final int KAMIKAZE_CHANCE_START  = 10;  //3  
+    public static final int KAMIKAZE_CHANCE_START  = 3;   
     public static final int KAMIKAZE_CHANCE_GROWTH = 1;
     public static final int KAMIKAZE_CHANCE_MAX    = 15;   // Keep low at 15 so they are "surprises"
 
     // SLIME (Mini-Boss / Lane Splitter)
-    public static final int SLIME_WAVE_MIN      = 1;      // Starts appearing wave 6
-    public static final int SLIME_CHANCE_START  = 50;//2
+    public static final int SLIME_WAVE_MIN      = 6;      // Starts appearing wave 6
+    public static final int SLIME_CHANCE_START  = 2;//2
     public static final int SLIME_CHANCE_GROWTH = 1;
-    public static final int SLIME_CHANCE_MAX    = 50;     // Low max of 10 because they split into 5!
+    public static final int SLIME_CHANCE_MAX    = 10;     // Low max of 10 because they split into 5!
     
     //Effect Config 
         // ── SNIPER EFFECT STATS ──────────────────────────────────────────────────
