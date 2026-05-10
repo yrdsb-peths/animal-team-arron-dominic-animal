@@ -34,6 +34,7 @@ public class UnitRegistry {
         roster.add(new UnitData(4, "4", GameConfig.ALCHEMIST_UNIT_COST, Color.ORANGE, (l, c) -> new AlchemistUnit(l, c)));
         roster.add(new UnitData(5, "5", GameConfig.WALL_UNIT_COST, new Color(100,70,40), (l, c) -> new WallUnit(l, c)));
         roster.add(new UnitData(6, "6", GameConfig.BIG_WALL_UNIT_COST, new Color(60, 60, 70), (l, c) -> new BigWallUnit(l, c)));
+        roster.add(new UnitData(7, "7", GameConfig.COWARD_UNIT_COST, Color.YELLOW, (l, c) -> new CowardUnit(l, c)));
     }
     
     // Helper method to look up a unit by its ID

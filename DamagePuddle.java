@@ -59,7 +59,8 @@ public class DamagePuddle extends Actor {
             List<Enemy> enemiesInside = getIntersectingObjects(Enemy.class);
             for (Enemy e : enemiesInside) {
                 // Damage scales with layers!
-                e.takeDamage(baseTickDamage * layers);
+                //shiled means bypass shield
+                e.takeDamage(baseTickDamage * layers, true);
             }
         }
     }

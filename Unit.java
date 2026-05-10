@@ -36,8 +36,14 @@ public abstract class Unit extends Actor {
             handleDeath(world);
             return;
         }
-
         attackCooldown.update(world);
+        
+        // OVERCLOCK MAGIC: Tick the timer a second time! 
+        // This halves the cooldown of every unit on the board.
+        if (AbilityManager.isOverclocked()) {
+            attackCooldown.update(world);
+        }
+        
         updateBehavior(world);
     }
 
@@ -112,5 +118,9 @@ public abstract class Unit extends Actor {
     
     public boolean isDead() {
         return isDead;
+    }
+    
+    public boolean isTargetable() {
+        return true; 
     }
 }

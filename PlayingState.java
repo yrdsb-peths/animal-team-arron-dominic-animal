@@ -53,6 +53,10 @@ public class PlayingState implements GameState {
         uiElements.add(goldDisplay);
         uiElements.add(speedBtn);
         
+        AbilityButton ob = new AbilityButton("OVERCLOCK", GameConfig.OVERCLOCK_COST);
+        world.addObject(ob, GameConfig.s(60), world.getHeight() - GameConfig.s(40));
+        uiElements.add(ob);
+        
         createUnitMenu(world);
         GameRNG.randomize();
     }
@@ -62,11 +66,12 @@ public class PlayingState implements GameState {
         // Run game logic
         waveManager.update(world);
         placementManager.update(world);
+        AbilityManager.update(world); // <--- ADD THIS LINE HERE
 
         // Update UI displays
         waveDisplay.setText("WAVE: " + waveManager.getWaveNumber() + " | LIVES: " + base.lives);
         goldDisplay.setText("GOLD: " + CurrencyManager.getGold());
-        
+ 
         // If Base dies, Game Over
         if (base.lives <= 0) {
             world.getGSM().changeState(new GameOverState());
@@ -84,18 +89,19 @@ public class PlayingState implements GameState {
     }
     
     private void createUnitMenu(MyWorld world) {
-        int startX = GameConfig.s(40);
-        int startY = GameConfig.s(100);
-        int spacing = GameConfig.s(70);
-    
-        // Automatically create a UI Card for EVERY unit in the Registry
+        UIScrollManager.reset();
+
+        // Create the cards at their "Home" positions
         for (int i = 0; i < UnitRegistry.roster.size(); i++) {
             UnitRegistry.UnitData data = UnitRegistry.roster.get(i);
             
+            // HomeY starts at Top Limit and moves down
+            int homeY = GameConfig.MENU_TOP_LIMIT + (i * GameConfig.MENU_CARD_SPACING);
+            
             UIUnitCard card = new UIUnitCard(
-                data.id, data.cost, data.color, data.key, placementManager
+                data.id, data.cost, data.color, data.key, placementManager, homeY
             );
-            world.addObject(card, startX, startY + (i * spacing));
+            world.addObject(card, GameConfig.MENU_X, homeY);
             uiElements.add(card);
         }
     }

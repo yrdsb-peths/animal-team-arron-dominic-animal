@@ -6,50 +6,62 @@ public class UIUnitCard extends Actor {
     private Color unitColor;
     private String key;
     private PlacementManager pm;
+    private int homeY; // Where the card wants to be
 
-    public UIUnitCard(int id, int price, Color color, String key, PlacementManager pm) {
+    public UIUnitCard(int id, int price, Color color, String key, PlacementManager pm, int homeY) {
         this.unitID = id;
         this.price = price;
         this.unitColor = color;
         this.key = key;
         this.pm = pm;
-        
+        this.homeY = homeY;
         updateImage();
     }
 
     public void act() {
-        // Redraw only if selection changes
-        updateImage();
-        
-        // Allow clicking the card itself to select
-        if (Greenfoot.mouseClicked(this)) {
-            pm.setSelectedUnit(this.unitID);
-        }
-    
-        // 2. Redraw to show if we are selected
-        updateImage();
-    }
+        // 1. Update position based on scroll
+        int targetY = homeY - UIScrollManager.getOffset();
+        setLocation(getX(), targetY);
 
+        // 2. Visibility Culling (Hide if outside the menu area)
+        if (targetY < GameConfig.MENU_TOP_LIMIT || targetY > GameConfig.MENU_BOTTOM_LIMIT) {
+            if (getImage().getTransparency() != 0) getImage().setTransparency(0);
+        } else {
+            // Only update/show if inside the area
+            if (getImage().getTransparency() == 0) getImage().setTransparency(255);
+            
+            if (Greenfoot.mouseClicked(this)) {
+                pm.setSelectedUnit(this.unitID);
+            }
+            updateImage();
+        }
+    }
+    
     private void updateImage() {
         boolean isSelected = (pm.getSelectedUnit() == unitID);
         int size = GameConfig.s(50);
+        
+        // Make the card slightly taller to fit everything
         GreenfootImage img = new GreenfootImage(size, size + 20);
         
-        // Background - Brighten if selected
-        img.setColor(isSelected ? Color.WHITE : new Color(50, 50, 50));
+        // Background
+        img.setColor(isSelected ? Color.WHITE : new Color(40, 40, 40));
         img.fill();
         
         // Unit Icon
         img.setColor(unitColor);
         img.fillRect(10, 10, size - 20, size - 20);
         
-        // Price & Key Label
+        // PRICE (Bottom)
         img.setColor(isSelected ? Color.BLACK : Color.WHITE);
         img.setFont(new Font("SansSerif", true, false, 12));
-        img.drawString("$" + price, 5, size + 12);
-        img.drawString("[" + key + "]", size - 20, 15);
+        img.drawString("$" + price, 5, size + 15);
+        
+        // KEYBOARD SHORTCUT (Top Right) - RESTORED!
+        img.setColor(isSelected ? Color.RED : Color.YELLOW);
+        img.setFont(new Font("SansSerif", true, false, 14));
+        img.drawString("[" + key + "]", size - 25, 15);
         
         setImage(img);
     }
-
 }

@@ -3,17 +3,57 @@ import greenfoot.*;
 public class PlacementManager {
     private int selectedUnit = 1; 
     private Actor previewActor;
+    
+    private boolean upPressed = false;
+    private boolean downPressed = false;
 
     public void update(MyWorld world) {
         
-        // 1. Automatically check keyboard inputs based on the Registry
-        for (UnitRegistry.UnitData data : UnitRegistry.roster) {
-            if (Greenfoot.isKeyDown(data.key) && selectedUnit != data.id) {
-                selectedUnit = data.id; 
-                updatePreview(world); 
+        // 1. Find the list index of the currently selected unit
+        int currentIndex = 0;
+        for (int i = 0; i < UnitRegistry.roster.size(); i++) {
+            if (UnitRegistry.roster.get(i).id == selectedUnit) {
+                currentIndex = i;
+                break;
             }
         }
 
+        // 2. UP ARROW: Select previous unit and scroll it to the top
+        boolean up = Greenfoot.isKeyDown("up");
+        if (up && !upPressed) {
+            if (currentIndex > 0) {
+                currentIndex--;
+                selectedUnit = UnitRegistry.roster.get(currentIndex).id;
+                updatePreview(world);
+                UIScrollManager.setScroll(currentIndex * GameConfig.MENU_CARD_SPACING);
+            }
+        }
+        upPressed = up;
+
+        // 3. DOWN ARROW: Select next unit and scroll it to the top
+        boolean down = Greenfoot.isKeyDown("down");
+        if (down && !downPressed) {
+            if (currentIndex < UnitRegistry.roster.size() - 1) {
+                currentIndex++;
+                selectedUnit = UnitRegistry.roster.get(currentIndex).id;
+                updatePreview(world);
+                UIScrollManager.setScroll(currentIndex * GameConfig.MENU_CARD_SPACING);
+            }
+        }
+        downPressed = down;
+
+        // 4. Automatically check keyboard inputs (Number Keys) based on the Registry
+        for (int i = 0; i < UnitRegistry.roster.size(); i++) {
+            UnitRegistry.UnitData data = UnitRegistry.roster.get(i);
+            if (Greenfoot.isKeyDown(data.key) && selectedUnit != data.id) {
+                selectedUnit = data.id; 
+                updatePreview(world); 
+                // Also scroll perfectly if they press a number key!
+                UIScrollManager.setScroll(i * GameConfig.MENU_CARD_SPACING);
+            }
+        }
+
+        // 5. Mouse Placement Logic
         MouseInfo mouse = Greenfoot.getMouseInfo();
         if (mouse != null) {
             if (previewActor == null) updatePreview(world);

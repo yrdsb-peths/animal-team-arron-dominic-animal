@@ -9,7 +9,7 @@ public class TankEnemy extends Enemy {
               GameConfig.TANK_ENEMY_SPEED, 
               GameConfig.TANK_ENEMY_ATK_COOLDOWN, 
               0); 
-              
+              this.baseDrop = GameConfig.DROP_TANK;
         // Tank visual: A big, tough-looking rectangle
         GreenfootImage img = new GreenfootImage(50, 50);
         img.setColor(Color.GRAY);

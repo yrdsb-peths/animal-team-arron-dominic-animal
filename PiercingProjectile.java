@@ -30,7 +30,8 @@ public class PiercingProjectile extends Actor {
         for (Enemy e : touchingEnemies) {
             // Only hurt them if we haven't hurt them yet!
             if (!alreadyHit.contains(e) && !e.isDead()) {
-                e.takeDamage(damage);
+                //true means bypass shield
+                e.takeDamage(damage, true);
                 alreadyHit.add(e); // Add to memory
             }
         }

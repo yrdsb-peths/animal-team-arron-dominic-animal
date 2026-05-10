@@ -9,7 +9,7 @@ public class BasicEnemy extends Enemy {
               GameConfig.BASIC_ENEMY_SPEED, 
               GameConfig.BASIC_ENEMY_ATK_COOLDOWN, 
               0); 
-              
+              this.baseDrop = GameConfig.DROP_BASIC;
         setImage(new GreenfootImage(40, 40));
         getImage().setColor(Color.RED);
         getImage().fillOval(0, 0, 40, 40);

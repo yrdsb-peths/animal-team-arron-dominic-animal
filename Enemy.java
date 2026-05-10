@@ -16,8 +16,10 @@ public abstract class Enemy extends Actor {
     
     protected double exactX;
     protected double exactY;
-
-    // NEW: Attack Timer system
+    
+    protected int baseDrop;
+    protected int spawnWave = 1;
+    
     protected GameTimer attackTimer;
 
     public Enemy(int maxHealth, int damage, float baseSpeed, double attackCooldown, int laneIndex) {
@@ -75,15 +77,14 @@ public abstract class Enemy extends Actor {
     protected void updateBehavior(MyWorld world) {
         Unit unitInFront = (Unit) getOneIntersectingObject(Unit.class);
         
-        if (unitInFront != null && !unitInFront.isDead()) {
-            // We are blocked! Tick the attack timer.
+        // Only attack if the unit is actually targetable!
+        if (unitInFront != null && !unitInFront.isDead() && unitInFront.isTargetable()) {
             attackTimer.update(world);
             if (attackTimer.isExpired()) {
                 performAttack(unitInFront);
             }
         } else {
-            // Path is clear! Walk forward.
-            performMovement();
+            performMovement(); // Keep walking right over them!
         }
     }
 
@@ -105,9 +106,11 @@ public abstract class Enemy extends Actor {
         super.setLocation((int)exactX, (int)exactY);
     }
     
-    public void scaleStats(float healthMult, float damageMult) {
-        this.health = (int)(this.health * healthMult);
-        this.damage = Math.max(1, (int)(this.damage * damageMult));
+        
+    public void scaleStats(float hpMult, float dmgMult, int waveNum) {
+        this.health = (int)(this.health * hpMult);
+        this.damage = (int)(this.damage * dmgMult);
+        this.spawnWave = waveNum;
     }
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -133,11 +136,34 @@ public abstract class Enemy extends Actor {
         health -= amount;
         if (health <= 0) die();
     }
+    
+    //Overloaded take damage method
+    public void takeDamage(int amount, boolean bypassShield) {
+        if (isDead) return;
+        health -= amount;
+        if (health <= 0) die();
+    }
 
     public void die() {
         if (!isDead) {
             isDead = true;
-            CurrencyManager.earn(GameConfig.ENEMY_DROP);
+            
+            // 1. Calculate Wave Scaling
+            double waveMult = 1.0 + (spawnWave * GameConfig.DROP_GROWTH_PER_WAVE);
+            
+            // 2. Calculate Risk Multiplier (Left side = 2.5x, Right side = 1.0x)
+            double screenPercent = (double)getX() / GameConfig.WORLD_WIDTH; 
+            screenPercent = Math.max(0.0, Math.min(1.0, screenPercent)); // Keep between 0 and 1
+            double riskMult = 1.0 + (1.5 * (1.0 - screenPercent)); 
+
+            // 3. Final Calculation
+            int finalDrop = (int)(baseDrop * waveMult * riskMult);
+            
+            CurrencyManager.earn(finalDrop);
+            ScoreManager.addScore(finalDrop * 2);
+
+            // 4. SHOW THE MONEY!
+            getWorld().addObject(new FloatingText("+$" + finalDrop, Color.YELLOW, 18, 1), getX(), getY() - 20);
         }
     }
 
