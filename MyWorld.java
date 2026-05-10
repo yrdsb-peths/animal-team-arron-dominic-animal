@@ -29,13 +29,35 @@ public class MyWorld extends World {
         gsm.pushState(new MenuState());
         
     }
-
+    
+    private int shakeTimer = 0;
+    private int shakeIntensity = 0;
+    
+    public void startShake(int duration, int intensity) {
+        this.shakeTimer = duration;
+        this.shakeIntensity = intensity;
+    }
+    
     @Override
     public void act() {
-        // The entire game flows through this one line, 60 times per second
+        super.act(); // Essential for world act
         gsm.update();
+        
+        // Handle Screen Shake
+        if (shakeTimer > 0) {
+            int xOffset = Greenfoot.getRandomNumber(shakeIntensity * 2) - shakeIntensity;
+            int yOffset = Greenfoot.getRandomNumber(shakeIntensity * 2) - shakeIntensity;
+            getBackground().drawImage(getBackground(), xOffset, yOffset); // Visual trick
+            shakeTimer--;
+            if (shakeTimer <= 0) {
+                // Reset background to normal position after shake
+                // Repaint the background color if you don't use an image:
+                getBackground().setColor(new Color(30, 30, 50));
+                getBackground().fill();
+            }
+        }
     }
-
+    
     /** Gives actors access to the state machine */
     public GameStateManager getGSM() {
         return gsm;

@@ -19,7 +19,7 @@ public class AbilityManager {
             if (CurrencyManager.spend(GameConfig.OVERCLOCK_COST)) {
                 overclockTimer.reset(); // Set frames back to max
                 overclockTimer.start(); // Set active = true
-                world.addObject(new FloatingText("OVERCLOCK!", Color.CYAN, 40, 2), world.getWidth()/2, world.getHeight()/2);
+                world.addObject(new FloatingText("OVERCLOCK!", Color.CYAN, 24, 3, 45), world.getWidth()/2, world.getHeight()/2);
             }
         }
     }

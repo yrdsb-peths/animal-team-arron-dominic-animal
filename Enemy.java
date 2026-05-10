@@ -163,7 +163,7 @@ public abstract class Enemy extends Actor {
             ScoreManager.addScore(finalDrop * 2);
 
             // 4. SHOW THE MONEY!
-            getWorld().addObject(new FloatingText("+$" + finalDrop, Color.YELLOW, 18, 1), getX(), getY() - 20);
+            getWorld().addObject(new FloatingText("+$" + finalDrop, Color.YELLOW), getX(), getY());
         }
     }
 

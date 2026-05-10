@@ -31,13 +31,13 @@ public class GameConfig {
     
     //Base config
     
-    public static final int BASE_LIVES = 3;
+    public static final int BASE_LIVES = 9;
     
     // Volume config
     public static final int MASTER_VOLUME = 80;
     
     //Economy Config
-    public static final int STARTING_GOLD = 10000;
+    public static final int STARTING_GOLD = 1500;
   
     // ── UNIT STATS ───────────────────────────────────────────────────────────
     public static final int BASIC_UNIT_COST = 50;
@@ -50,12 +50,12 @@ public class GameConfig {
     public static final double SNIPER_UNIT_COOLDOWN = 3.0; // Shoots slow
     public static final int SNIPER_UNIT_DAMAGE = 120;       // Hits very hard
     
-    public static final int RAILGUN_UNIT_COST = 75;
+    public static final int RAILGUN_UNIT_COST = 200;
     public static final int RAILGUN_UNIT_HP = 5;
     public static final double RAILGUN_UNIT_COOLDOWN = 2.0; // Shoots slow, but clears waves
     public static final int RAILGUN_UNIT_DAMAGE = 50;
     
-    public static final int ALCHEMIST_UNIT_COST = 150;
+    public static final int ALCHEMIST_UNIT_COST = 200;
     public static final int ALCHEMIST_UNIT_HP = 4;
     public static final double ALCHEMIST_UNIT_COOLDOWN = 4.0; 
     public static final int ALCHEMIST_UNIT_DAMAGE = 70; // High impact damage
@@ -167,10 +167,10 @@ public class GameConfig {
     public static final int KAMIKAZE_CHANCE_MAX    = 15;   // Keep low at 15 so they are "surprises"
 
     // SLIME (Mini-Boss / Lane Splitter)
-    public static final int SLIME_WAVE_MIN      = 6;      // Starts appearing wave 6
-    public static final int SLIME_CHANCE_START  = 2;//2
+    public static final int SLIME_WAVE_MIN      = 1;      // Starts appearing wave 6
+    public static final int SLIME_CHANCE_START  = 50;//2
     public static final int SLIME_CHANCE_GROWTH = 1;
-    public static final int SLIME_CHANCE_MAX    = 10;     // Low max of 10 because they split into 5!
+    public static final int SLIME_CHANCE_MAX    = 50;     // Low max of 10 because they split into 5!
     
     //Effect Config 
         // ── SNIPER EFFECT STATS ──────────────────────────────────────────────────
@@ -184,7 +184,7 @@ public class GameConfig {
         public static final int LASER_DAMAGE = 100;
         
     // ── ECONOMY & DROPS ──────────────────────────────────────────────────
-    public static final double INTEREST_RATE = 0.05; // 5% of saved gold per wave
+    public static final double INTEREST_RATE = 0.1; // 10% of saved gold per wave
     
     // Ability Costs
     public static final int OVERCLOCK_COST = 300;
@@ -195,7 +195,7 @@ public class GameConfig {
     public static final int DROP_TANK = 35;
     public static final int DROP_SHIELD = 50;
     public static final int DROP_KAMIKAZE = 5; // Low drop, they blow themselves up!
-    public static final int DROP_SLIME = 100;
+    public static final int DROP_SLIME = 50;
     public static final int DROP_MINISLIME = 10;
     public static final int DROP_MICROSLIME = 5;
 

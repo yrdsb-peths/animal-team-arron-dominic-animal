@@ -70,7 +70,8 @@ public class WaveManager {
     /** True while there are still enemies to spawn OR alive in the world. */
     private boolean waveInProgress  = false;
 
-
+    /**Warn user about slime*/
+    private boolean slimeDiscovered = false;
     // ─────────────────────────────────────────────────────────────────────────
     // LIFECYCLE
     // ─────────────────────────────────────────────────────────────────────────
@@ -185,14 +186,31 @@ public class WaveManager {
     }
 
     /** Pops one spawn from the queue and adds the enemy actor to the world. */
+
     private void spawnNext(MyWorld world) {
-        EnemySpawn spawn = spawnQueue.poll();
+        EnemySpawn spawn = spawnQueue.peek(); // Look at the next enemy
         if (spawn == null) return;
 
+        // THE BOSS CINEMATIC TRIGGER
+        if (spawn.type == EnemySpawn.SLIME && !slimeDiscovered) {
+            slimeDiscovered = true;
+            spawn.warningTriggered = true;
+            
+            // PUSH THE CINEMATIC STATE (This freezes the game for 3 seconds!)
+            world.getGSM().pushState(new BossCinematicState("THE KING SLIME", 180));
+            
+            // Give the player 1 second of calm to place units AFTER the cinematic ends
+            spawnTimer.setDuration(1.0); 
+            spawnTimer.reset();
+            return; 
+        }
+        
+        // Normal spawn logic
+        spawnQueue.poll(); // Actually remove from queue
+        
         int spawnX = world.getWidth() + GameConfig.s(30); 
         int spawnY = LaneManager.getLaneY(spawn.lane);
 
-        // Pass the current wave number to apply stat scaling
         Enemy enemy = spawn.create(currentWave); 
         enemy.setLane(spawn.lane);
         world.addObject(enemy, spawnX, spawnY);
@@ -207,7 +225,7 @@ public class WaveManager {
 
         // 1. Base Clear Bonus
         CurrencyManager.earn(WAVE_CLEAR_BONUS + currentWave * 2);
-        ScoreManager.addScore(currentWave); 
+        ScoreManager.addScore(currentWave*50); 
 
         // 2. INTEREST (The Greed Mechanic!)
         int interest = (int)(CurrencyManager.getGold() * GameConfig.INTEREST_RATE);
@@ -216,7 +234,7 @@ public class WaveManager {
             
             // Spawn HUGE text in the middle of the screen
             String msg = "WAVE CLEARED!\nInterest Earned: +$" + interest;
-            world.addObject(new FloatingText(msg, Color.YELLOW, 40, 2), world.getWidth() / 2, world.getHeight() / 2);
+            world.addObject(new FloatingText(msg, Color.YELLOW, 180), world.getWidth() / 2, world.getHeight() / 2);
         }
     }
 
@@ -255,6 +273,8 @@ public class WaveManager {
 
         public final int type;
         public final int lane;
+        
+        public boolean warningTriggered = false;
 
         public EnemySpawn(int type, int lane) {
             this.type = type;

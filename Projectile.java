@@ -32,14 +32,27 @@ public class Projectile extends Actor {
         turnTowards(target.getX(), target.getY());
         move(speed * GameConfig.GAME_SPEED);
 
+        // Inside Projectile.act()
         if (intersects(target)) {
-            target.takeDamage(damage);
+            // LOGIC: If Projectile is to the RIGHT of the enemy, it's a backstab!
+            // (Because enemies are facing Left)
+            boolean isBackstab = (getX() > target.getX());
             
+            // If it's a backstab, we use the 'bypassShield' version of takeDamage
+            if (isBackstab) {
+                target.takeDamage(damage, true); // True = Ignore Shield
+                // Optional: Show a "Backstab!" message
+                // getWorld().addObject(new FloatingText("BACKSTAB!", Color.RED, 15, 1), getX(), getY());
+            } else {
+                target.takeDamage(damage); // Normal damage logic (blocked by shield)
+            }
+            
+            // If there is a status effect payload (like Sniper Slow), apply it too
             if (payload != null) {
                 target.applyEffect(payload);
             }
             
-            world.removeObject(this);
+            getWorld().removeObject(this);
         }
     }
 }
