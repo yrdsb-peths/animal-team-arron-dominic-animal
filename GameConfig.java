@@ -202,6 +202,14 @@ public class GameConfig {
     // How much extra gold enemies drop per wave (0.10 = +10% per wave)
     public static final float DROP_GROWTH_PER_WAVE = 0.10f;
     
+    // ── CALAMITY SETTINGS ──────────────────────────────────────────────────
+    public static final int CALAMITY_INTERVAL = 5;      // Every 5 waves
+    public static final int CRASH_DURATION = 5;         // Financial Crash lasts 5 waves
+    public static final int CRASH_PRICE_MULT = 5;       // Prices x5
+    public static final double DROUGHT_SPEED_MULT = 0.5; // 50% fire rate
+    public static final int FOG_REVEAL_RANGE = s(150);  // Distance units "see" in fog
+    public static final int RAIN_CHANCE_PER_ACT = 10;   // Chance for a raindrop per frame
+    
     // ── UI SCROLL CONFIG ─────────────────────────────────────────────────────
     public static final int MENU_X = s(50);
     public static final int MENU_TOP_LIMIT = s(80);    // Highest a card can go

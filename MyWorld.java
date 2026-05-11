@@ -3,6 +3,7 @@ import greenfoot.*;
 public class MyWorld extends World {
 
     private GameStateManager gsm;
+    private int actCount = 0;
 
     public MyWorld() {
         super(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, 1, false);
@@ -41,6 +42,7 @@ public class MyWorld extends World {
     @Override
     public void act() {
         super.act(); // Essential for world act
+        actCount++;
         gsm.update();
         
         // Handle Screen Shake
@@ -61,5 +63,10 @@ public class MyWorld extends World {
     /** Gives actors access to the state machine */
     public GameStateManager getGSM() {
         return gsm;
+    }
+    
+    /** Gives other classes access to the current "Time" of the world */
+    public int getActCount() {
+        return actCount;
     }
 }

@@ -44,6 +44,14 @@ public abstract class Unit extends Actor {
             attackCooldown.update(world);
         }
         
+        if (isDroughtAffected) {
+            // Only tick the cooldown every other frame (50% speed)
+            if (getWorld().getObjects(MyWorld.class).get(0).getActCount() % 2 == 0) {
+                attackCooldown.update(world);
+            }
+        } else {
+            attackCooldown.update(world);
+        }
         updateBehavior(world);
     }
 
@@ -123,4 +131,17 @@ public abstract class Unit extends Actor {
     public boolean isTargetable() {
         return true; 
     }
+    
+    public int getLaneIndex() { return laneIndex; }
+    public int getColIndex() { return colIndex; }
+    
+    private boolean isDroughtAffected = false;
+    
+    public void applyDrought() {
+        this.isDroughtAffected = true;
+        // Visually turn the unit a bit brown/dry
+        getImage().setColor(new Color(100, 60, 20, 100));
+        getImage().fill();
+    }
+
 }
