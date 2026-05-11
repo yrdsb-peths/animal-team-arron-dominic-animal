@@ -6,7 +6,7 @@ public class PlacementManager {
     
     private boolean upPressed = false;
     private boolean downPressed = false;
-
+    int cost = UnitRegistry.getById(selectedUnit).cost * CalamityManager.getPriceMultiplier();
     public void update(MyWorld world) {
         
         // 1. Find the list index of the currently selected unit

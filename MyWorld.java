@@ -14,13 +14,20 @@ public class MyWorld extends World {
         // Create the state machine — it runs the whole game
         gsm = new GameStateManager(this);
 
-       // Define the layer order (first = on top, last = at bottom)
+       
+        // Define the layer order (first = on top, last = at bottom)
         setPaintOrder(
-            UIText.class,      // UI text always on top
-            // Projectile.class,  // Uncomment when created
-            // Unit.class,        // Uncomment when created
-            Enemy.class
-            // LaneTile.class     // Uncomment when created
+            BossIntroOverlay.class, // Cinemtatics on very top
+            FloatingText.class,     // Damage/Money popups
+            UIText.class,           // UI Text
+            AbilityButton.class,    // UI Buttons
+            UISpeedButton.class,
+            UIUnitCard.class,       // Menu Cards
+            FogOverlay.class,       // NEW: Fog covers the grid
+            PurpleRainController.class, // NEW: Purple tint covers the grid
+            Projectile.class,       
+            Unit.class,             
+            Enemy.class             
         );
 
         // Pre-load all sounds (no lag on first play)

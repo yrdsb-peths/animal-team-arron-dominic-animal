@@ -62,13 +62,11 @@ public abstract class Enemy extends Actor {
 
         updateBehavior(world);
         
+        // Inside Enemy.act()
         if (CalamityManager.isFogActive()) {
-            List<Unit> nearby = getObjectsInRange(GameConfig.FOG_REVEAL_RANGE, Unit.class);
-            if (nearby.isEmpty()) {
-                getImage().setTransparency(0); // Hidden!
-            } else {
-                getImage().setTransparency(255); // Spotted!
-            }
+            // MAGIC HACK: 1 out of 255 is completely invisible to the human eye, 
+            // but Greenfoot still registers it for Bullet and Wall collisions!
+            getImage().setTransparency(1); 
         } else {
             getImage().setTransparency(255); // Normal
         }

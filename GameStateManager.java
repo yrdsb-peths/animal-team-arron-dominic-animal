@@ -127,11 +127,12 @@ public class GameStateManager {
     }
     
     public int getWaveNumber() {
-        // Check if the current top state is actually the PlayingState
-        if (isState(PlayingState.class)) {
-            // "Peek" at the state, cast it to PlayingState, and get the number
-            return ((PlayingState)peekState()).getWaveNumber();
+        // Search through the stack to find PlayingState, even if it's under a cinematic!
+        for (int i = stateStack.size() - 1; i >= 0; i--) {
+            if (stateStack.get(i) instanceof PlayingState) {
+                return ((PlayingState)stateStack.get(i)).getWaveNumber();
+            }
         }
-        return -1; // Return -1 if we are in a menu or game over
+        return -1; 
     }
 }

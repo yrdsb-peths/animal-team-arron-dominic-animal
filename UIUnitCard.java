@@ -55,7 +55,9 @@ public class UIUnitCard extends Actor {
         // PRICE (Bottom)
         img.setColor(isSelected ? Color.BLACK : Color.WHITE);
         img.setFont(new Font("SansSerif", true, false, 12));
-        img.drawString("$" + price, 5, size + 15);
+        // Multiply the display price by the calamity multiplier!
+        int currentDisplayPrice = price * CalamityManager.getPriceMultiplier();
+        img.drawString("$" + currentDisplayPrice, 5, size + 15);
         
         // KEYBOARD SHORTCUT (Top Right) - RESTORED!
         img.setColor(isSelected ? Color.RED : Color.YELLOW);

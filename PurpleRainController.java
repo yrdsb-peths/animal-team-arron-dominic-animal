@@ -3,39 +3,37 @@ import greenfoot.*;
 public class PurpleRainController extends Actor {
     private int waveStarted;
     
+    public PurpleRainController() {
+        // Visual: A full-screen translucent purple tint
+        GreenfootImage img = new GreenfootImage(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+        img.setColor(new Color(150, 0, 200, 60)); // 60 alpha = clearly visible but tinted
+        img.fill();
+        setImage(img);
+    }
+    
     protected void addedToWorld(World world) {
-        // This now works thanks to the GSM bridge we built!
         waveStarted = ((MyWorld)world).getGSM().getWaveNumber();
-        
-        // Visual: Make the background slightly purple
-        world.getBackground().setColor(new Color(100, 0, 100, 30));
-        world.getBackground().fill();
     }
 
     public void act() {
         MyWorld world = (MyWorld)getWorld();
-        if (world == null) return;
+        if (world == null || !world.getGSM().isState(PlayingState.class)) return;
 
-        // 1. AUTO-REMOVE: If the wave number changes, the calamity is over!
+        // Auto remove when wave changes
         if (world.getGSM().getWaveNumber() != waveStarted) {
-            // Clean up the background color back to normal
-            world.getBackground().setColor(new Color(30, 30, 50));
-            world.getBackground().fill();
             world.removeObject(this);
             return;
         }
 
-        // 2. RAIN LOGIC: Spawn puddles randomly
-        // Use the config name we set earlier: RAIN_CHANCE_PER_ACT
-        if (GameRNG.getRandomNumber(1000) < GameConfig.RAIN_TICK_CHANCE) {
-            int rx = GameRNG.getRandomNumber(world.getWidth());
+        // Puddle Spawn Chance
+        if (GameRNG.getRandomNumber(100) < 5) {
+            // Only spawn on the playable grid, not behind the UI menu!
+            int minX = GameConfig.GRID_START_X;
+            int rx = minX + GameRNG.getRandomNumber(world.getWidth() - minX);
             int ry = GameRNG.getRandomNumber(world.getHeight());
             
-            // Drop a toxic puddle that lasts 3 seconds
-            world.addObject(new DamagePuddle(3.0, 5), rx, ry);
-            
-            // Visual: A small purple drop falling (optional)
-            // world.addObject(new FloatingText(".", Color.MAGENTA, 30, -5, 20), rx, ry - 100);
+            // Drop the toxic ACID puddle! (Lasts 4 seconds, deals 1 damage every 0.5s)
+            world.addObject(new AcidPuddle(4.0, 1), rx, ry);
         }
     }
 }

@@ -5,6 +5,9 @@ public class GameConfig {
 
     // ── CALAMITY MASTER SETTINGS ────────────────────────────────────────
     public static final int CALAMITY_INTERVAL = 5;      // Happens every 5 waves
+      
+    //Economy Config
+    public static final int STARTING_GOLD = 150000;
     
     // ── SPECIFIC CALAMITY STATS ─────────────────────────────────────────
     public static final double DROUGHT_SPEED_MULT = 0.5;
@@ -48,9 +51,6 @@ public class GameConfig {
     
     // Volume config
     public static final int MASTER_VOLUME = 80;
-    
-    //Economy Config
-    public static final int STARTING_GOLD = 1500;
   
     // ── UNIT STATS ───────────────────────────────────────────────────────────
     public static final int BASIC_UNIT_COST = 50;

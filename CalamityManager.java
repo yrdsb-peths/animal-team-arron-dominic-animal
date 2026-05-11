@@ -5,23 +5,24 @@ public class CalamityManager {
     private static int lastCalamityWave = 0;
     private static int crashWavesLeft = 0;
     private static boolean fogActive = false;
-
+    private static int lastSeenWave = 0;
+    
     /** Main loop: called by PlayingState every frame */
     public static void update(MyWorld world, int wave) {
-        // 1. Check for manual Debug Triggers
         if (GameConfig.DEBUG_MODE) {
             handleDebugKeys(world);
         }
 
-        // 2. Automatic logic (runs once per wave break)
+        // DECREMENT DURATIONS ONLY ONCE PER WAVE CHANGE
+        if (wave > lastSeenWave) {
+            if (crashWavesLeft > 0) crashWavesLeft--;
+            lastSeenWave = wave;
+        }
+
+        // Trigger random calamity
         if (wave >= GameConfig.CALAMITY_INTERVAL && wave % GameConfig.CALAMITY_INTERVAL == 0 && wave != lastCalamityWave) {
             lastCalamityWave = wave;
             triggerRandomCalamity(world);
-        }
-        
-        // 3. Persistent effect logic
-        if (world.getGSM().getWaveNumber() > lastCalamityWave) {
-            if (crashWavesLeft > 0) crashWavesLeft--;
         }
     }
 
@@ -87,7 +88,7 @@ public class CalamityManager {
 
     private static void runPurpleRain(MyWorld world) {
         announce(world, "PURPLE RAIN", "Acid rain incoming!", Color.MAGENTA);
-        world.addObject(new PurpleRainController(), 0, 0);
+        world.addObject(new PurpleRainController(), world.getWidth() / 2, world.getHeight() / 2);
     }
 
     private static void runGreatFog(MyWorld world) {
