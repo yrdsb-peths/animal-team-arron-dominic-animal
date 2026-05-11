@@ -1,3 +1,5 @@
+import greenfoot.*;
+
 public class GameConfig {
 
    // ── DEBUG SETTINGS ──────────────────────────────────────────────────
@@ -132,6 +134,21 @@ public class GameConfig {
     public static final double COWARD_UNIT_COOLDOWN = 1.0; 
     public static final int COWARD_UNIT_DAMAGE = 50;
     public static final int COWARD_SCARE_RANGE = s(50); // Distance before it hides
+    
+    // --- UNIT LEVELING SYSTEM ---
+    public static final int MAX_UNIT_LEVEL = 5;
+    public static final float LEVEL_HP_MULT = 5f;      
+    public static final float LEVEL_DMG_MULT = 3f;    
+    public static final float LEVEL_COOLDOWN_MULT = 0.9f; 
+    public static final float UPGRADE_COST_STEEPNESS = 20f; 
+    public static final float LEVEL_VISUAL_SCALE = 0.12f; // Slightly more growth
+
+    // --- LEVEL COLORS (For Borders/Glows) ---
+    public static final Color LVL_1_COLOR = Color.WHITE;
+    public static final Color LVL_2_COLOR = new Color(50, 255, 50);  // Green
+    public static final Color LVL_3_COLOR = new Color(50, 150, 255); // Rare Blue
+    public static final Color LVL_4_COLOR = new Color(200, 50, 255); // Epic Purple
+    public static final Color LVL_5_COLOR = new Color(255, 215, 0);  // Legendary Gold
     
     // ── ATTACK & SHIELD RULES ──────────────────────────────────────────────
     public static final boolean BASIC_PROJECTILE_BYPASS   = false; // Standard bullets blocked
