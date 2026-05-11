@@ -20,18 +20,18 @@ public abstract class Unit extends Actor {
 
 
     public Unit(int health, int laneIndex, int colIndex, double cooldownSeconds) {
-        // Find my current tech level from the registry
+        // 1. Set Level from Registry
         UnitRegistry.UnitData data = UnitRegistry.getByClass(this.getClass());
-        this.level = data.level;
-
-        // Apply Exponential Scaling immediately
+        this.level = UnitRegistry.getByClass(this.getClass()).level;
+    
+        // 2. Scale Stats
         this.maxHealth = (int)(health * Math.pow(GameConfig.LEVEL_HP_MULT, level - 1));
         this.health = maxHealth;
         this.laneIndex = laneIndex;
         this.colIndex = colIndex;
         
         double scaledCD = cooldownSeconds * Math.pow(GameConfig.LEVEL_COOLDOWN_MULT, level - 1);
-        this.attackCooldown = new GameTimer(scaledCD, false);
+        this.attackCooldown = new GameTimer(scaledCD, false); 
     }
 
     @Override
@@ -101,9 +101,10 @@ public abstract class Unit extends Actor {
     }
     
     public int getUpgradeCost() {
-        // This now uses the fixed Registry method
         int baseCost = UnitRegistry.getByClass(this.getClass()).cost;
-        return (int)(baseCost * (level * GameConfig.UPGRADE_COST_STEEPNESS));
+        // EXPONENTIAL FORMULA: Matches the Shop logic
+        double exponentialCurve = Math.pow(GameConfig.UPGRADE_COST_EXP_MULT, this.level - 1);
+        return (int)(baseCost * GameConfig.UPGRADE_COST_BASE_MULT * exponentialCurve);
     }
 
     /** Finds the furthest-left enemy in the exact same lane. */
@@ -203,5 +204,9 @@ public abstract class Unit extends Actor {
     
     // Abstract helper to ensure we know the starting HP for scaling
     protected abstract int getBaseHPFromConfig();
+        
+    public int getLevel() {
+        return this.level;
+    }
     
 }

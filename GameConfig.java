@@ -135,13 +135,39 @@ public class GameConfig {
     public static final int COWARD_UNIT_DAMAGE = 50;
     public static final int COWARD_SCARE_RANGE = s(50); // Distance before it hides
     
-    // --- UNIT LEVELING SYSTEM ---
+    // ========================================================================
+    // ── THE DIFFICULTY ENGINE (EASY BALANCING KNOBS) ────────────────────────
+    // ========================================================================
+
+    // --- 1. PLAYER POWER SPIKES (The "Grace Period" Creators) ---
     public static final int MAX_UNIT_LEVEL = 5;
-    public static final float LEVEL_HP_MULT = 5f;      
-    public static final float LEVEL_DMG_MULT = 3f;    
-    public static final float LEVEL_COOLDOWN_MULT = 0.9f; 
-    public static final float UPGRADE_COST_STEEPNESS = 20f; 
-    public static final float LEVEL_VISUAL_SCALE = 0.12f; // Slightly more growth
+    // Base ^ (Level-1). 
+    // At Lvl 5: Damage is 81x. HP is 256x. Cooldown is 52% (~2x faster).
+    public static final float LEVEL_HP_MULT       = 4.0f;  
+    public static final float LEVEL_DMG_MULT      = 3.0f;  
+    public static final float LEVEL_COOLDOWN_MULT = 0.85f; 
+    public static final float LEVEL_VISUAL_SCALE  = 0.12f; 
+
+    // --- 2. ECONOMY: THE HEAVY COST OF POWER ---
+    // Placement Cost = Base * (PLACEMENT_COST_MULT ^ (Level - 1))
+    // At 2.5x: Sniper L1 = $100. Sniper L5 = $3,900. (Keeps L1 units viable!)
+    public static final float PLACEMENT_COST_MULT = 2.5f;  
+
+    // Upgrade Cost = Base * UPGRADE_BASE_MULT * (UPGRADE_EXP_MULT ^ (Level - 1))
+    // Example Sniper ($100): L2=$1,000 | L3=$3,000 | L4=$9,000 | L5=$27,000
+    public static final float UPGRADE_COST_BASE_MULT = 10f; 
+    public static final float UPGRADE_COST_EXP_MULT  = 3.0f; 
+
+    // --- 3. ENEMY THREAT (The Relentless Creep) ---
+    // Instead of decimals, we use easy-to-read percentages.
+    // +12% HP per wave means enemies double their HP every ~6 waves.
+    // By Wave 40, enemies have 93x HP. (You will NEED Level 5 units!)
+    public static final double ENEMY_HP_GROWTH_PCT   = 12.0; // 12% increase per wave
+    public static final double ENEMY_DMG_GROWTH_PCT  = 5.0;  // 5% increase per wave
+    public static final double ENEMY_DROP_GROWTH_PCT = 10.0; // 10% more gold dropped per wave
+
+    // ========================================================================
+    
 
     // --- LEVEL COLORS (For Borders/Glows) ---
     public static final Color LVL_1_COLOR = Color.WHITE;
@@ -284,6 +310,7 @@ public class GameConfig {
     public static final int SHOP_START_X = s(160); // Where the first card draws
     public static final int SHOP_START_Y = s(240);
     public static final int SHOP_SPACING_X = s(160);
+    
     
     // ── ABILITIES ────────────────────────────────────────────────────────
     public static final int OVERCLOCK_COST = 300;

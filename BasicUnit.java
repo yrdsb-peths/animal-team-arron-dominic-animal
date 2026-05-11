@@ -5,15 +5,23 @@ public class BasicUnit extends Unit {
 
     public BasicUnit(int laneIndex, int colIndex) {
         super(GameConfig.BASIC_UNIT_HP, laneIndex, colIndex, GameConfig.BASIC_UNIT_COOLDOWN);
+        this.stackCount = 1; 
         updateVisual();
     }
 
     public void addStack() {
         stackCount++;
-        // Maintain your original HP stacking logic
-        int newMaxHP = (int)(GameConfig.BASIC_UNIT_HP * (stackCount * 0.6 + Math.sqrt(stackCount) * 0.4));
-        this.health += (newMaxHP - this.maxHealth);
+        
+        // Calculate the base HP for a single unit AT THIS LEVEL
+        double levelHPBoost = Math.pow(GameConfig.LEVEL_HP_MULT, this.level - 1);
+        int unitBaseHPAtCurrentLevel = (int)(GameConfig.BASIC_UNIT_HP * levelHPBoost);
+        
+        // Use that boosted base HP to calculate the new stack total
+        int newMaxHP = (int)(unitBaseHPAtCurrentLevel * (stackCount * 0.6 + Math.sqrt(stackCount) * 0.4));
+        
+        this.health += (newMaxHP - this.maxHealth); // Heal by the difference
         this.maxHealth = newMaxHP;
+        
         updateVisual();
     }
 
@@ -24,7 +32,8 @@ public class BasicUnit extends Unit {
         int size = img.getWidth();
         
         // Draw the Swarm Dots on top of the frame
-        int gridSide = (int)Math.ceil(Math.sqrt(stackCount));
+        int displayCount = Math.max(1, stackCount);
+        int gridSide = (int)Math.ceil(Math.sqrt(displayCount));
         int dotSize = Math.max(2, (size / gridSide) - 2); 
         int offset = (size - (gridSide * (dotSize + 1))) / 2; // Center the dots
 

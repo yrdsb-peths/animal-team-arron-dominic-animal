@@ -19,9 +19,11 @@ public class UpgradeCard extends Actor {
             }
         }
     }
-
+   
     private int getUpgradeCost() {
-        return (int)(data.cost * data.level * GameConfig.UPGRADE_COST_STEEPNESS);
+        // Formula: BaseCost * 10 * (3.0 ^ (Level-1))
+        double exponentialCurve = Math.pow(GameConfig.UPGRADE_COST_EXP_MULT, data.level - 1);
+        return (int)(data.cost * GameConfig.UPGRADE_COST_BASE_MULT * exponentialCurve);
     }
 
     private void applyGlobalUpgrade() {
@@ -41,30 +43,42 @@ public class UpgradeCard extends Actor {
         int h = GameConfig.SHOP_CARD_HEIGHT;
         GreenfootImage img = new GreenfootImage(w, h);
         
-        img.setColor(new Color(40, 40, 40)); // Dark BG
+        // 1. Background & Border
+        img.setColor(new Color(25, 25, 35));
         img.fill();
-        
-        // Border matches their current level color
         img.setColor(UnitVisuals.getLevelColor(data.level));
         img.drawRect(0, 0, w-1, h-1);
-        img.drawRect(1, 1, w-3, h-3); // Thick border
-
-        // Draw the visual representation of what the unit looks like NOW
-        img.drawImage(UnitVisuals.draw(data.id, data.level, data.color), w/2 - 20, 20);
+    
+        // 2. THE UNIT INSTANCE (The "Real" Object)
+        // We create a real instance of the unit using its spawner.
+        // We pass -1, -1 because it's not actually going on the grid.
+        Unit dummy = data.spawner.create(-1, -1); 
         
-        // Text Info
+        // Grab the image directly from the Actor itself
+        GreenfootImage unitIcon = dummy.getImage();
+        
+        // Center the real actor's image on our card
+        int iconX = (w - unitIcon.getWidth()) / 2;
+        int iconY = 30; 
+        img.drawImage(unitIcon, iconX, iconY);
+        
+        // 3. Text Info
         img.setColor(Color.WHITE);
-        img.setFont(new Font("SansSerif", true, false, 14));
-        img.drawString(data.unitClass.getSimpleName().replace("Unit", ""), 10, h/2 + 10);
-        img.drawString("Level: " + data.level + " / " + GameConfig.MAX_UNIT_LEVEL, 10, h/2 + 30);
+        img.setFont(new Font("SansSerif", true, false, 16));
+        String name = data.unitClass.getSimpleName().replace("Unit", "");
+        img.drawString(name, 15, h/2 + 25);
+        
+        img.setFont(new Font("SansSerif", false, false, 14));
+        img.drawString("Lvl: " + data.level, 15, h/2 + 45);
         
         if (data.level < GameConfig.MAX_UNIT_LEVEL) {
-            img.setColor(Color.GREEN);
-            img.drawString("Cost: $" + getUpgradeCost(), 10, h/2 + 60);
+            img.setColor(new Color(100, 255, 100));
+            img.drawString("Upgrade: $" + getUpgradeCost(), 15, h/2 + 70);
         } else {
             img.setColor(new Color(255, 215, 0));
-            img.drawString("MAXED OUT", 10, h/2 + 60);
+            img.drawString("MAX TECH", 15, h/2 + 70);
         }
+        
         setImage(img);
     }
 }

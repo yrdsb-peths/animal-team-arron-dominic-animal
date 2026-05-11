@@ -157,12 +157,13 @@ public abstract class Enemy extends Actor {
         if (!isDead) {
             isDead = true;
             
-            // 1. Calculate Wave Scaling
-            double waveMult = 1.0 + (spawnWave * GameConfig.DROP_GROWTH_PER_WAVE);
+            // 1. Calculate Wave Scaling (Compound Interest Formula)
+            double dropGrowth = 1.0 + (GameConfig.ENEMY_DROP_GROWTH_PCT / 100.0);
+            double waveMult = Math.pow(dropGrowth, spawnWave);
             
             // 2. Calculate Risk Multiplier (Left side = 2.5x, Right side = 1.0x)
             double screenPercent = (double)getX() / GameConfig.WORLD_WIDTH; 
-            screenPercent = Math.max(0.0, Math.min(1.0, screenPercent)); // Keep between 0 and 1
+            screenPercent = Math.max(0.0, Math.min(1.0, screenPercent)); 
             double riskMult = 1.0 + (1.5 * (1.0 - screenPercent)); 
 
             // 3. Final Calculation
@@ -171,7 +172,6 @@ public abstract class Enemy extends Actor {
             CurrencyManager.earn(finalDrop);
             ScoreManager.addScore(finalDrop * 2);
 
-            // 4. SHOW THE MONEY!
             getWorld().addObject(new FloatingText("+$" + finalDrop, Color.YELLOW), getX(), getY());
         }
     }

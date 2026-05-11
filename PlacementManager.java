@@ -81,24 +81,30 @@ public class PlacementManager {
         Unit existingUnit = LaneManager.getUnitAt(lane, col);
         UnitRegistry.UnitData data = UnitRegistry.getById(selectedUnit);
         
-        // If Basic Unit and identical, handle stacking (Keep this if you like stacking)
+                // BASIC UNIT STACKING LOGIC
         if (selectedUnit == 1 && existingUnit instanceof BasicUnit) {
-            if (CurrencyManager.spend(data.cost * CalamityManager.getPriceMultiplier())) {
+            int existingLevel = existingUnit.getLevel();
+            int scaledStackCost = (int)(data.cost * Math.pow(GameConfig.PLACEMENT_COST_MULT, existingLevel - 1));
+            
+            if (CurrencyManager.spend(scaledStackCost * CalamityManager.getPriceMultiplier())) {
                 ((BasicUnit)existingUnit).addStack();
             }
             return;
         }
         
-        // IF occupied, DO NOTHING (Spam click removed)
         if (existingUnit != null) return; 
         
-        int finalCost = data.cost * CalamityManager.getPriceMultiplier();
+        // PLACEMENT EXPONENTIAL COST
+        int scaledPlacementCost = (int)(data.cost * Math.pow(GameConfig.PLACEMENT_COST_MULT, data.level - 1));
+        int finalCost = scaledPlacementCost * CalamityManager.getPriceMultiplier();
+        
         if (CurrencyManager.spend(finalCost)) {
             Unit u = data.spawner.create(lane, col);
             LaneManager.occupy(lane, col, u);
             world.addObject(u, LaneManager.getCellX(col), LaneManager.getLaneY(lane));
         }
     }
+
     
     public int getSelectedUnit() { return selectedUnit; }
     public void setSelectedUnit(int id) { this.selectedUnit = id; }

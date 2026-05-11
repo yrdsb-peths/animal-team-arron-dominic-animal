@@ -56,7 +56,10 @@ public class UIUnitCard extends Actor {
         img.setColor(isSelected ? Color.BLACK : Color.WHITE);
         img.setFont(new Font("SansSerif", true, false, 12));
         // Multiply the display price by the calamity multiplier!
-        int currentDisplayPrice = price * CalamityManager.getPriceMultiplier();
+        UnitRegistry.UnitData data = UnitRegistry.getById(unitID);
+        int scaledCost = (int)(price * Math.pow(GameConfig.PLACEMENT_COST_MULT, data.level - 1));
+        int currentDisplayPrice = scaledCost * CalamityManager.getPriceMultiplier();
+        
         img.drawString("$" + currentDisplayPrice, 5, size + 15);
         
         // KEYBOARD SHORTCUT (Top Right) - RESTORED!
