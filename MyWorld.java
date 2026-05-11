@@ -19,10 +19,12 @@ public class MyWorld extends World {
         setPaintOrder(
             BossIntroOverlay.class, // Cinemtatics on very top
             FloatingText.class,     // Damage/Money popups
+            BlockSpark.class,
             UIText.class,           // UI Text
             AbilityButton.class,    // UI Buttons
             UISpeedButton.class,
             UIUnitCard.class,       // Menu Cards
+            FrostPulse.class,
             FogOverlay.class,       // NEW: Fog covers the grid
             PurpleRainController.class, // NEW: Purple tint covers the grid
             Projectile.class,       

@@ -4,6 +4,7 @@ import java.util.List;
 public abstract class Unit extends Actor {
 
     protected int health;
+    protected int maxHealth;
     protected int laneIndex;
     protected int colIndex;
     protected boolean isDead = false;
@@ -17,12 +18,14 @@ public abstract class Unit extends Actor {
 
     public Unit(int health, int laneIndex, int colIndex, double cooldownSeconds) {
         this.health = health;
+        this.maxHealth = health;
         this.laneIndex = laneIndex;
         this.colIndex = colIndex;
         this.attackCooldown = new GameTimer(cooldownSeconds, false);
     }
 
     @Override
+
     public final void act() {
         MyWorld world = (MyWorld) getWorld();
         if (world == null || !world.getGSM().isState(PlayingState.class)) return;
@@ -36,26 +39,28 @@ public abstract class Unit extends Actor {
             handleDeath(world);
             return;
         }
-        attackCooldown.update(world);
-        
-        // OVERCLOCK MAGIC: Tick the timer a second time! 
-        // This halves the cooldown of every unit on the board.
-        if (AbilityManager.isOverclocked()) {
-            attackCooldown.update(world);
-        }
         
         if (isDroughtAffected) {
-            // Only tick the cooldown every other frame (50% speed)
-            if (getWorld().getObjects(MyWorld.class).get(0).getActCount() % 2 == 0) {
+            // Use the world reference directly instead of getObjects()
+            if (world.getActCount() % 2 == 0) {
                 attackCooldown.update(world);
             }
         } else {
             attackCooldown.update(world);
         }
+        
+        // OVERCLOCK MAGIC
+        if (AbilityManager.isOverclocked()) {
+            attackCooldown.update(world);
+        }
+        
         updateBehavior(world);
     }
 
     protected void updateBehavior(MyWorld world) {
+        // EMP PREVENTS FIRING!
+        if (CalamityManager.isEMPActive()) return;
+
         if (!attackCooldown.isActive() || attackCooldown.isExpired()) {
             Enemy target = findTarget();
             if (target != null) {
@@ -145,8 +150,7 @@ public abstract class Unit extends Actor {
     }
     
     public int getMaxHealth() {
-        // For BasicUnit, this might need to include stack logic!
-        return GameConfig.BASIC_UNIT_HP; // Simplified for now
+        return maxHealth;
     }
 
 }

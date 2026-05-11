@@ -79,4 +79,8 @@ public class BasicUnit extends Unit {
         setImage(img);
         setNormalImage(img);
     }
+    
+    public int getStackCount() {
+        return stackCount;
+    }
 }

@@ -31,7 +31,7 @@ public class PiercingProjectile extends Actor {
             // Only hurt them if we haven't hurt them yet!
             if (!alreadyHit.contains(e) && !e.isDead()) {
                 //true means bypass shield
-                e.takeDamage(damage, true);
+                e.takeDamage(damage, GameConfig.RAILGUN_LASER_BYPASS);
                 alreadyHit.add(e); // Add to memory
             }
         }

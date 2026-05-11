@@ -34,6 +34,7 @@ public class PlayingState implements GameState {
         // Initialize Managers
         LaneManager.reset();
         CurrencyManager.reset();
+        CalamityManager.reset();
         waveManager = new WaveManager();
         placementManager = new PlacementManager();
 
@@ -53,9 +54,21 @@ public class PlayingState implements GameState {
         uiElements.add(goldDisplay);
         uiElements.add(speedBtn);
         
-        AbilityButton ob = new AbilityButton("OVERCLOCK", GameConfig.OVERCLOCK_COST);
-        world.addObject(ob, GameConfig.s(60), world.getHeight() - GameConfig.s(40));
-        uiElements.add(ob);
+        int btnWidth = GameConfig.s(170);
+        int startX = GameConfig.s(220); // Push to the right so it doesn't overlap the unit cards
+        int bottomY = GameConfig.WORLD_HEIGHT - GameConfig.s(30);
+
+        AbilityButton btn1 = new AbilityButton(1, "OVERCLOCK", GameConfig.OVERCLOCK_COST);
+        AbilityButton btn2 = new AbilityButton(2, "TIME FREEZE", GameConfig.FREEZE_COST);
+        AbilityButton btn3 = new AbilityButton(3, "TAC NUKE", GameConfig.NUKE_COST);
+
+        world.addObject(btn1, startX, bottomY);
+        world.addObject(btn2, startX + btnWidth, bottomY);
+        world.addObject(btn3, startX + (btnWidth * 2), bottomY);
+
+        uiElements.add(btn1);
+        uiElements.add(btn2);
+        uiElements.add(btn3);
         
         createUnitMenu(world);
         GameRNG.randomize();
@@ -110,5 +123,9 @@ public class PlayingState implements GameState {
         
     public int getWaveNumber() {
         return waveManager.getWaveNumber();
+    }
+    
+    public WaveManager getWaveManager() {
+        return waveManager;
     }
 }

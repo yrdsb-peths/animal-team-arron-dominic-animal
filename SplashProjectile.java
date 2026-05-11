@@ -36,7 +36,7 @@ public class SplashProjectile extends Actor {
             // 1. Damage enemies in range (Splash)
             List<Enemy> enemiesHit = getObjectsInRange(splashRadius, Enemy.class);
             for (Enemy e : enemiesHit) {
-                e.takeDamage(damage);
+                e.takeDamage(damage, GameConfig.ALCHEMIST_SPLASH_BYPASS);
             }
             
             // 2. SMART PUDDLE SPAWNING

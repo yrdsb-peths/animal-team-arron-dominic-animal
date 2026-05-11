@@ -119,10 +119,18 @@ public class WaveManager {
             int lane = GameRNG.getRandomNumber(GameConfig.NUM_LANES);
             //Forced Wave
             if (forcedEnemyType != -1) {
-                spawnQueue.add(new EnemySpawn(forcedEnemyType, lane));
-                continue; // Skip all the random rolls below
+                if (forcedEnemyType == EnemySpawn.RUMBLING_MIX) {
+                    // The Evil Combo: Roll between Kamikaze and Shield
+                    int type = (GameRNG.getRandomNumber(100) < GameConfig.RUMBLING_BOMBER_CHANCE) 
+                                ? EnemySpawn.KAMIKAZE 
+                                : EnemySpawn.SHIELD;
+                    spawnQueue.add(new EnemySpawn(type, lane));
+                } else {
+                    // Normal forced wave (e.g. 100% Kamikaze for Stampede)
+                    spawnQueue.add(new EnemySpawn(forcedEnemyType, lane));
+                }
+                continue; // Skip all the random rolls below!
             }
-
             int roll = GameRNG.getRandomNumber(100);
 
             // Calculate current chances
@@ -222,6 +230,12 @@ public class WaveManager {
 
         Enemy enemy = spawn.create(currentWave); 
         enemy.setLane(spawn.lane);
+        
+        if (enemy instanceof KamikazeEnemy && !spawnQueue.isEmpty()) { 
+             // We can check a flag or just apply it if it's a high-volume wave
+             ((KamikazeEnemy)enemy).setElite(GameConfig.KAMIKAZE_SWARM_SHIELD, 1.0, 1.0f);
+        }
+        
         world.addObject(enemy, spawnX, spawnY);
     }
 
@@ -247,8 +261,32 @@ public class WaveManager {
         }
     }
     
+    public void replaceCurrentWave(int enemyType, double countMultiplier, double customSpawnInterval, boolean isElite) {
+        this.currentWave++;           // Treat this as a brand new wave
+        this.waveInProgress = true;   // Force the spawning state to ON
+        this.waitingForBreak = false; // Instantly cancel the break timer if it was active
+        spawnQueue.clear();
+        int baseCount = 3 + (int)(currentWave * GameConfig.DIFF_QUANTITY_GROWTH);
+        int finalCount = (int)(baseCount * countMultiplier);
+
+        for (int i = 0; i < finalCount; i++) {
+            int lane = GameRNG.getRandomNumber(GameConfig.NUM_LANES);
+            spawnQueue.add(new EnemySpawn(enemyType, lane, isElite));
+        }
+        
+        // Bypass the MIN_SPAWN_INTERVAL cap completely for Calamities!
+        spawnTimer.setDuration(customSpawnInterval); 
+        spawnTimer.reset();
+    }
+    
     public static void forceNextWaveType(int type) {
         forcedEnemyType = type;
+    }
+    
+    private static int forcedPattern = 0; // 0 = Normal, 1 = Stampede, 2 = The Rumbling
+    
+    public static void forceNextWavePattern(int pattern) {
+        forcedPattern = pattern;
     }
     // ─────────────────────────────────────────────────────────────────────────
     // QUERIES — read by HUD and PlayingState
@@ -281,37 +319,59 @@ public class WaveManager {
         public static final int SHIELD = 3;
         public static final int KAMIKAZE = 4;
         public static final int SLIME = 5;
+        public static final int HEAVY_SHIELD = 6;
+        public static final int RUMBLING_MIX = 99;
 
         public final int type;
         public final int lane;
+        public final boolean elite; // NEW
         
         public boolean warningTriggered = false;
 
-        public EnemySpawn(int type, int lane) {
+        public EnemySpawn(int type, int lane, boolean elite) {
             this.type = type;
             this.lane = lane;
+            this.elite = elite;
         }
         
-        // Add the waveNum parameter here!
+        // Backwards compatibility for normal waves
+        public EnemySpawn(int type, int lane) {
+            this(type, lane, false); 
+        }
+        
         public Enemy create(int waveNum) {
             Enemy e;
-            
             switch (type) {
-                case TANK:     e = new TankEnemy(); break;
-                case SHIELD:   e = new ShieldBearerEnemy(); break;
-                case KAMIKAZE: e = new KamikazeEnemy(); break; // Ensure this matches your class name!
-                case SLIME:    e = new SlimeEnemy(); break;
-                default:       e = new BasicEnemy(); break; 
+                case TANK:         e = new TankEnemy(); break;
+                case SHIELD:       e = new ShieldBearerEnemy(); break;
+                case KAMIKAZE:     e = new KamikazeEnemy(); break; 
+                case SLIME:        e = new SlimeEnemy(); break;
+                case HEAVY_SHIELD: e = new HeavyShieldEnemy(); break;
+                default:           e = new BasicEnemy(); break; 
             }
             
-            // Uses Config for stat multipliers
-            float hpMult = 1.0f + (waveNum * GameConfig.DIFF_HP_GROWTH);
-            float dmgMult = 1.0f + (waveNum * GameConfig.DIFF_DMG_GROWTH);
-            
+            // --- NEW: SLIME SUPERIORITY SCALING ---
+            float hpMult, dmgMult;
+            if (type == SLIME) {
+                hpMult = 1.0f + (waveNum * GameConfig.SLIME_BONUS_HP_GROWTH);
+                dmgMult = 1.0f + (waveNum * GameConfig.SLIME_BONUS_DMG_GROWTH);
+            } else {
+                hpMult = 1.0f + (waveNum * GameConfig.DIFF_HP_GROWTH);
+                dmgMult = 1.0f + (waveNum * GameConfig.DIFF_DMG_GROWTH);
+            }
             e.scaleStats(hpMult, dmgMult, waveNum);
+            
+            // --- NEW: APPLY ELITE BUFFS ---
+            if (elite) {
+                if (e instanceof SlimeEnemy) {
+                    ((SlimeEnemy)e).setElite(GameConfig.BLOODMOON_SHIELD, GameConfig.BLOODMOON_HP_MULT, GameConfig.BLOODMOON_SPEED_BOOST);
+                } else if (e instanceof KamikazeEnemy) {
+                    ((KamikazeEnemy)e).setElite(GameConfig.KAMIKAZE_SWARM_SHIELD, 1.0, 1.0f);
+                }
+            }
+            
             return e;
         }
     }
-    
     
 }

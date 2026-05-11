@@ -1,8 +1,12 @@
+// ==================================================
+// FILE: ./SlimeEnemy.java (Add shield logic)
+// ==================================================
 import greenfoot.*;
 
 public class SlimeEnemy extends Enemy {
     private int currentMaxHealth = -1;
-    private GameTimer animTimer = new GameTimer(0.1, true); // Updates visual 10 FPS
+    private GameTimer animTimer = new GameTimer(0.1, true);
+    private int shieldPlating = 0; // NEW: Shield plating
 
     public SlimeEnemy() {
         super(GameConfig.SLIME_ENEMY_HP, GameConfig.SLIME_ENEMY_DAMAGE, 
@@ -10,14 +14,29 @@ public class SlimeEnemy extends Enemy {
         this.baseDrop = GameConfig.DROP_SLIME; 
     }
 
+    //Allow Slimes to become Elites
+    public void setElite(int shieldLayers, double hpMult, float speedMult) {
+        this.shieldPlating = shieldLayers;
+        this.health = (int)(this.health * hpMult);
+        this.baseSpeed *= speedMult;
+    }
+
+    @Override
+    public void takeDamage(int amount, boolean bypassShield) {
+        //Shield absorption logic
+        if (shieldPlating > 0 && !bypassShield) {
+            shieldPlating--;
+            getWorld().addObject(new FloatingText("BLOCK!", Color.CYAN, 15, 2, 30), getX(), getY());
+            return; 
+        }
+        super.takeDamage(amount, bypassShield);
+    }
+
     @Override
     protected void updateBehavior(MyWorld world) {
-        super.updateBehavior(world); // Normal walk and attack logic
-        
-        // We capture the max health the first frame after WaveManager scales it
+        super.updateBehavior(world); 
         if (currentMaxHealth == -1) currentMaxHealth = this.health;
         
-        // Animate the pulse and color shift
         animTimer.update(world);
         if (animTimer.isExpired() || currentMaxHealth == this.health) {
             double hpPercent = Math.max(0.0, (double)this.health / currentMaxHealth);
@@ -48,26 +67,32 @@ public class SlimeEnemy extends Enemy {
     }
     
     private void updateVisual(double hpPercent) {
-        int size = 60; // Huge!
+        int size = 60; 
         GreenfootImage img = new GreenfootImage(size, size + 10);
-        
         long time = System.currentTimeMillis();
         
-        // 1. Pulsing Toxic Aura (Breathes in and out)
+        // 1. Pulsing Toxic Aura
         int pulse = (int)(Math.sin(time / 150.0) * 4) + 4; 
         img.setColor(new Color(0, 255, 0, 80)); 
         img.fillOval(pulse, pulse, size - pulse*2, size - pulse*2);
         
-        // 2. Color Shifting Body (Shifts between Green and Yellow/Orange)
+        // 2. Color Shifting Body
         int r = (int)(Math.sin(time / 200.0) * 50) + 50; 
         img.setColor(new Color(r, 180, 0));
         img.fillOval(8, 8, size - 16, size - 16);
+
+        // Draw Elite Cyan Shield if active
+        if (shieldPlating > 0) {
+            img.setColor(new Color(0, 255, 255, 150)); // Bright Cyan
+            img.drawOval(4, 4, size - 8, size - 8);
+            img.drawOval(5, 5, size - 10, size - 10);
+        }
         
-        // 3. Glowing Red Eyes (They pulse slightly too)
+        // 3. Glowing Red Eyes
         int eyeSize = (int)(Math.sin(time / 100.0) * 2) + 8; 
         img.setColor(Color.RED);
-        img.fillOval(18, 22, eyeSize, eyeSize); // Left eye
-        img.fillOval(34, 22, eyeSize, eyeSize); // Right eye
+        img.fillOval(18, 22, eyeSize, eyeSize); 
+        img.fillOval(34, 22, eyeSize, eyeSize); 
         
         setImage(img);
     }
