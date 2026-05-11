@@ -4,13 +4,16 @@ import java.util.List;
 public class SplashProjectile extends Actor {
     private Enemy target;
     private int damage;
-    private int splashRadius; // e.g., 100 pixels
+    private int splashRadius; 
     private int speed = GameConfig.s(8);
+    private int level; // ADDED: Store the level of the Alchemist
 
-    public SplashProjectile(Enemy target, int damage, int splashRadius) {
+    // UPDATED CONSTRUCTOR: Now accepts level
+    public SplashProjectile(Enemy target, int damage, int splashRadius, int level) {
         this.target = target;
         this.damage = damage;
         this.splashRadius = splashRadius;
+        this.level = level; // Store it
         
         GreenfootImage img = new GreenfootImage(20, 20);
         img.setColor(Color.ORANGE);
@@ -29,26 +32,23 @@ public class SplashProjectile extends Actor {
         }
 
         turnTowards(target.getX(), target.getY());
-        move(speed);
+        move(speed * GameConfig.GAME_SPEED);
 
-        // ON IMPACT:
         if (intersects(target)) {
-            // 1. Damage enemies in range (Splash)
+            // 1. Splash Damage
             List<Enemy> enemiesHit = getObjectsInRange(splashRadius, Enemy.class);
             for (Enemy e : enemiesHit) {
                 e.takeDamage(damage, GameConfig.ALCHEMIST_SPLASH_BYPASS);
             }
             
             // 2. SMART PUDDLE SPAWNING
-            // Look for an existing puddle exactly where we hit
             List<DamagePuddle> existing = getObjectsInRange(GameConfig.s(40), DamagePuddle.class);
             
             if (!existing.isEmpty()) {
-                // If one exists, grab the first one and add a layer
                 existing.get(0).addLayer();
             } else {
-                // Otherwise, create a new one
-                world.addObject(new DamagePuddle(GameConfig.PUDDLE_DURATION, GameConfig.PUDDLE_TICK_DAMAGE), getX(), getY());
+                // FIXED: Now correctly passes the level into the Puddle!
+                world.addObject(new DamagePuddle(GameConfig.PUDDLE_DURATION, GameConfig.PUDDLE_TICK_DAMAGE, level), getX(), getY());
             }
             
             world.removeObject(this);

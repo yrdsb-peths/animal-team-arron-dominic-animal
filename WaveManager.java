@@ -352,18 +352,20 @@ public class WaveManager {
             
             // --- NEW: COMPOUNDING ENEMY SCALING ---
             // Formula: (1 + Percentage/100) ^ WaveNum
-            double hpGrowth = 1.0 + (GameConfig.ENEMY_HP_GROWTH_PCT / 100.0);
-            double dmgGrowth = 1.0 + (GameConfig.ENEMY_DMG_GROWTH_PCT / 100.0);
+            double hpGrowthRate = GameConfig.ENEMY_HP_GROWTH_PCT / 100.0;
+            double dmgGrowthRate = GameConfig.ENEMY_DMG_GROWTH_PCT / 100.0;
             
             double hpMult, dmgMult;
+            
             if (type == SLIME) {
-                // Slimes scale slightly harder (+2% compound interest)
-                hpMult = Math.pow(hpGrowth + 0.02, waveNum);
-                dmgMult = Math.pow(dmgGrowth + 0.02, waveNum);
+                // Bug 3 Fixed: Uses the Config variables, and applies them Linearly!
+                hpMult = 1.0 + ((hpGrowthRate + GameConfig.SLIME_BONUS_HP_GROWTH) * waveNum);
+                dmgMult = 1.0 + ((dmgGrowthRate + GameConfig.SLIME_BONUS_DMG_GROWTH) * waveNum);
             } else {
-                hpMult = Math.pow(hpGrowth, waveNum);
-                dmgMult = Math.pow(dmgGrowth, waveNum);
+                hpMult = 1.0 + (hpGrowthRate * waveNum);
+                dmgMult = 1.0 + (dmgGrowthRate * waveNum);
             }
+            
             e.scaleStats((float)hpMult, (float)dmgMult, waveNum);
             
             // --- NEW: APPLY ELITE BUFFS ---

@@ -85,7 +85,7 @@ public class PlacementManager {
         if (selectedUnit == 1 && existingUnit instanceof BasicUnit) {
             int existingLevel = existingUnit.getLevel();
             int scaledStackCost = (int)(data.cost * Math.pow(GameConfig.PLACEMENT_COST_MULT, existingLevel - 1));
-            
+       
             if (CurrencyManager.spend(scaledStackCost * CalamityManager.getPriceMultiplier())) {
                 ((BasicUnit)existingUnit).addStack();
             }

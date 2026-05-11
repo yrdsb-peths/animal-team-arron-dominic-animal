@@ -4,13 +4,15 @@ import java.util.List;
 
 public class PiercingProjectile extends Actor {
     private int damage;
-    private int speed = GameConfig.s(12); // Faster than normal!
-    private List<Enemy> alreadyHit = new ArrayList<>(); // Memory list
+    private int level; // ADDED: Store the level
+    private int speed = GameConfig.s(12); 
+    private List<Enemy> alreadyHit = new ArrayList<>(); 
 
-    public PiercingProjectile(int damage) {
+    // UPDATED CONSTRUCTOR: Now accepts level
+    public PiercingProjectile(int damage, int level) {
         this.damage = damage;
+        this.level = level; // Save it
         
-        // Draw a long yellow laser beam
         GreenfootImage img = new GreenfootImage(40, 10);
         img.setColor(Color.CYAN);
         img.fillRect(0, 0, 40, 10);
@@ -22,22 +24,25 @@ public class PiercingProjectile extends Actor {
         MyWorld world = (MyWorld) getWorld();
         if (world == null || !world.getGSM().isState(PlayingState.class)) return;
 
-        // Move strictly straight to the right
-        setLocation(getX() + speed, getY());
+        setLocation(getX() + speed * GameConfig.GAME_SPEED, getY());
 
-        // Check for enemies touching the laser
         List<Enemy> touchingEnemies = getIntersectingObjects(Enemy.class);
         for (Enemy e : touchingEnemies) {
-            // Only hurt them if we haven't hurt them yet!
             if (!alreadyHit.contains(e) && !e.isDead()) {
-                //true means bypass shield
                 e.takeDamage(damage, GameConfig.RAILGUN_LASER_BYPASS);
-                alreadyHit.add(e); // Add to memory
+                alreadyHit.add(e); 
             }
         }
 
-        // Delete projectile when it goes off screen
+        // --- UPDATED DELETION LOGIC ---
         if (getX() > world.getWidth() + 50) {
+            // HEAT TRAIL MECHANIC: Check if we are at the required level
+            if (level >= GameConfig.RAILGUN_TRAIL_UNLOCK) {
+                // Spawn the trail across the whole lane
+                int worldW = world.getWidth();
+                world.addObject(new HeatTrail(GameConfig.RAILGUN_TRAIL_DAMAGE, worldW), worldW / 2, getY());
+            }
+            
             world.removeObject(this);
         }
     }

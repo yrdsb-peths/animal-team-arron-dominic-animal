@@ -91,7 +91,7 @@ public class PlayingState implements GameState {
         placementManager.update(world);
         AbilityManager.update(world);
         
-        CalamityManager.update(world, waveManager.getWaveNumber());
+        CalamityManager.update(world, waveManager.getWaveNumber(), key);
 
         // Update UI displays
         waveDisplay.setText("WAVE: " + waveManager.getWaveNumber() + " | LIVES: " + base.lives);

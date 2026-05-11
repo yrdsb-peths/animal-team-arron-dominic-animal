@@ -61,7 +61,7 @@ public class Projectile extends Actor {
                     // Create a fresh copy of the slow effect for every enemy in the swarm
                     StatusEffect frost = EffectFactory.createSlow(
                         GameConfig.SNIPER_SLOW_DURATION, 
-                        GameConfig.SNIPER_SLOW_POWER
+                        GameConfig.SNIPER_SLOW_POWER,1.0f
                     );
                     e.applyEffect(frost);
                 }

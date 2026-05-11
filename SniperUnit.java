@@ -15,7 +15,11 @@ public class SniperUnit extends Unit {
     @Override
     protected void attack(Enemy target) {
         int scaledDmg = (int)(GameConfig.SNIPER_UNIT_DAMAGE * Math.pow(GameConfig.LEVEL_DMG_MULT, level - 1));
-        StatusEffect iceSlow = EffectFactory.createSlow(GameConfig.SNIPER_SLOW_DURATION, GameConfig.SNIPER_SLOW_POWER);
+        
+        // CHECK LEVEL FOR WEAKNESS
+        float debuff = (level >= GameConfig.SNIPER_DEBUFF_UNLOCK) ? GameConfig.SNIPER_FREEZE_WEAKNESS : 1.0f;
+        
+        StatusEffect iceSlow = EffectFactory.createSlow(GameConfig.SNIPER_SLOW_DURATION, GameConfig.SNIPER_SLOW_POWER, debuff);
         getWorld().addObject(new Projectile(target, scaledDmg, iceSlow), getX(), getY());
     }
         

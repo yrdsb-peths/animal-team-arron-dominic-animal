@@ -36,12 +36,15 @@ public class KamikazeEnemy extends Enemy {
 
     @Override
     protected void performAttack(Unit target) {
+        // Special logic: Deals massive damage to walls, normal damage to units
         if (target instanceof WallUnit || target instanceof BigWallUnit) {
-            target.takeDamage(GameConfig.KAMIKAZE_WALL_DAMAGE);
+            target.takeDamage(getFinalDamage(GameConfig.KAMIKAZE_WALL_DAMAGE), this);
         } else {
-            target.takeDamage(GameConfig.KAMIKAZE_ENEMY_DAMAGE);
+            target.takeDamage(getFinalDamage(GameConfig.KAMIKAZE_ENEMY_DAMAGE), this);
         }
-        this.takeDamage(9999, true); 
+        
+        // Kamikaze explodes!
+        this.takeDamage(99999, true); 
     }
 
     private void updateVisual() {

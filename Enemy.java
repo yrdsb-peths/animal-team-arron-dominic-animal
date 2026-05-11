@@ -12,6 +12,10 @@ public abstract class Enemy extends Actor {
     protected int laneIndex;
     protected float baseSpeed;
     public float speedMultiplier = 1.0f; // Modifiable by Status Effects
+    
+    public float damageDealtMultiplier = 1.0f; // Sniper Weakness
+    public float damageTakenMultiplier = 1.0f; // Alchemist Corrosive
+    
     protected List<StatusEffect> activeEffects = new ArrayList<>();
     
     protected double exactX;
@@ -50,8 +54,12 @@ public abstract class Enemy extends Actor {
             handleDeath(world);
             return;
         }
+        
+        //Reset multipliers
+        this.speedMultiplier = 1.0f; 
+        this.damageDealtMultiplier = 1.0f;
+        this.damageTakenMultiplier = 1.0f;
 
-        this.speedMultiplier = 1.0f; // Reset before effects are applied
 
         Iterator<StatusEffect> it = activeEffects.iterator();
         while (it.hasNext()) {
@@ -98,10 +106,13 @@ public abstract class Enemy extends Actor {
     }
 
     /** 
-     * HOOK 1: Every enemy subclass MUST define how it attacks.
+     * Standard attack logic for 90% of enemies.
+     * Automatically calculates weakness debuffs and applies Thorns tracking!
      */
-    protected abstract void performAttack(Unit target);
-
+    protected void performAttack(Unit target) {
+        target.takeDamage(getFinalDamage(this.damage), this);
+    }
+    
     /** 
      * HOOK 2: How the enemy moves. You can override this for jumping/teleporting.
      */
@@ -142,14 +153,24 @@ public abstract class Enemy extends Actor {
 
     public void takeDamage(int amount) {
         if (isDead) return;
-        health -= amount;
+        int finalAmount = (int)(amount * damageTakenMultiplier);
+        
+        health -= finalAmount;
         if (health <= 0) die();
     }
     
-    //Overloaded take damage method
+    protected int getFinalDamage(int baseDmg) {
+        return (int)(baseDmg * damageDealtMultiplier);
+    }
+    
+    // --- UPDATED TAKE DAMAGE ---
     public void takeDamage(int amount, boolean bypassShield) {
         if (isDead) return;
-        health -= amount;
+        
+        // Apply Corrosive Gas amplification!
+        int finalAmount = (int)(amount * damageTakenMultiplier);
+        
+        health -= finalAmount;
         if (health <= 0) die();
     }
 
@@ -157,9 +178,9 @@ public abstract class Enemy extends Actor {
         if (!isDead) {
             isDead = true;
             
-            // 1. Calculate Wave Scaling (Compound Interest Formula)
-            double dropGrowth = 1.0 + (GameConfig.ENEMY_DROP_GROWTH_PCT / 100.0);
-            double waveMult = Math.pow(dropGrowth, spawnWave);
+            // 1. Calculate Wave Scaling (LINEAR FORMULA)
+            double dropGrowthRate = GameConfig.ENEMY_DROP_GROWTH_PCT / 100.0;
+            double waveMult = 1.0 + (dropGrowthRate * spawnWave);
             
             // 2. Calculate Risk Multiplier (Left side = 2.5x, Right side = 1.0x)
             double screenPercent = (double)getX() / GameConfig.WORLD_WIDTH; 

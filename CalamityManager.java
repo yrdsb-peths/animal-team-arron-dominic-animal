@@ -19,8 +19,9 @@ public class CalamityManager {
         empTimer = new GameTimer(0, false);
     }
     
-    public static void update(MyWorld world, int wave) {
-        if (GameConfig.DEBUG_MODE) handleDebugKeys(world);
+    public static void update(MyWorld world, int wave, String key) {
+        // 2. Pass it into handleDebugKeys
+        if (GameConfig.DEBUG_MODE) handleDebugKeys(world, key);
         
         empTimer.update(world);
 
@@ -35,8 +36,9 @@ public class CalamityManager {
         }
     }
 
-    private static void handleDebugKeys(MyWorld world) {
-        String key = Greenfoot.getKey();
+    // 1. Add 'String key' to parameters
+    private static void handleDebugKeys(MyWorld world, String key) {
+        // String key = Greenfoot.getKey();  <--- DELETE THIS LINE
         if (key == null) return;
         
         if (key.equals(GameConfig.DEBUG_KEY_QUAKE)) runEarthquake(world);

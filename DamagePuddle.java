@@ -6,8 +6,10 @@ public class DamagePuddle extends Actor {
     private GameTimer tickTimer;
     private int baseTickDamage;
     private int layers = 1;
+    private int level;
 
-    public DamagePuddle(double durationSeconds, int damagePerTick) {
+    public DamagePuddle(double durationSeconds, int damagePerTick, int level) {
+        this.level = level;
         this.baseTickDamage = damagePerTick;
         this.lifeTimer = new GameTimer(durationSeconds, false);
         this.lifeTimer.start();
@@ -58,9 +60,12 @@ public class DamagePuddle extends Actor {
         if (tickTimer.isExpired()) {
             List<Enemy> enemiesInside = getIntersectingObjects(Enemy.class);
             for (Enemy e : enemiesInside) {
-                // Damage scales with layers!
-                //shiled means bypass shield
                 e.takeDamage(baseTickDamage * layers, true);
+                
+                // CORROSIVE GAS MECHANIC
+                if (level >= GameConfig.ALCHEMIST_CORROSIVE_UNLOCK) {
+                    e.applyEffect(new CorrosiveEffect(1.0, GameConfig.ALCHEMIST_DMG_AMP));
+                }
             }
         }
     }

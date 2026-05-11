@@ -130,13 +130,13 @@ public abstract class Unit extends Actor {
 
     protected abstract void attack(Enemy target);
 
-    public void takeDamage(int amount) {
+    public void takeDamage(int amount, Enemy attacker) {
         health -= amount;
-        // Trigger hurt animation
+        
         if (normalImage == null) normalImage = new GreenfootImage(getImage());
         if (hurtImage == null) {
             hurtImage = new GreenfootImage(normalImage);
-            hurtImage.setColor(new Color(255, 0, 0, 100)); // Transparent red overlay
+            hurtImage.setColor(new Color(255, 0, 0, 100)); 
             hurtImage.fill();
         }
         setImage(hurtImage);
@@ -144,6 +144,10 @@ public abstract class Unit extends Actor {
         hurtTimer.start();
     
         if (health <= 0) die();
+    }
+    // Fallback for Acid Puddles and Earthquakes
+    public void takeDamage(int amount) {
+        takeDamage(amount, null);
     }
     
     protected void setNormalImage(GreenfootImage newImg) {
@@ -187,19 +191,6 @@ public abstract class Unit extends Actor {
     
     public int getMaxHealth() {
         return maxHealth;
-    }
-    
-    /** Called by the Shop to update units already on the field */
-    public void reactToGlobalUpgrade() {
-        this.level = UnitRegistry.getByClass(this.getClass()).level;
-        
-        // Recalculate Max HP and heal to full
-        UnitRegistry.UnitData data = UnitRegistry.getByClass(this.getClass());
-        int baseHP = getBaseHPFromConfig(); // Helper to get raw config value
-        this.maxHealth = (int)(baseHP * Math.pow(GameConfig.LEVEL_HP_MULT, level - 1));
-        this.health = maxHealth;
-
-        updateVisual();
     }
     
     // Abstract helper to ensure we know the starting HP for scaling

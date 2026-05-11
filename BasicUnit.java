@@ -55,13 +55,38 @@ public class BasicUnit extends Unit {
 
     @Override
     protected void attack(Enemy target) {
+        // Attack the main target
+        fireAt(target);
+
+        // SWARM MECHANIC: Also fire at adjacent lanes if Level 2+
+        if (level >= GameConfig.BASIC_SWARM_UNLOCK) {
+            Enemy topTarget = findTargetInLane(laneIndex - 1);
+            if (topTarget != null) fireAt(topTarget);
+            
+            Enemy bottomTarget = findTargetInLane(laneIndex + 1);
+            if (bottomTarget != null) fireAt(bottomTarget);
+        }
+    }
+
+    private void fireAt(Enemy target) {
         double linearPart = stackCount * 0.4;
         double curvePart = Math.sqrt(stackCount) * 0.6;
         int baseDmg = (int)(GameConfig.BASIC_UNIT_DAMAGE * (linearPart + curvePart));
-        
-        // Apply 3x Level Multiplier
         int totalDamage = (int)(baseDmg * Math.pow(GameConfig.LEVEL_DMG_MULT, level - 1));
         getWorld().addObject(new Projectile(target, totalDamage, null), getX(), getY());
+    }
+
+    private Enemy findTargetInLane(int laneToCheck) {
+        if (laneToCheck < 0 || laneToCheck >= GameConfig.NUM_LANES) return null;
+        Enemy furthest = null;
+        int furthestX = Integer.MAX_VALUE;
+        for (Enemy e : getWorld().getObjects(Enemy.class)) {
+            if (e.getLaneIndex() == laneToCheck && !e.isDead() && e.getX() < furthestX) {
+                furthest = e;
+                furthestX = e.getX();
+            }
+        }
+        return furthest;
     }
     
     public int getStackCount()

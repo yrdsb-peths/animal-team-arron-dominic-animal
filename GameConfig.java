@@ -96,7 +96,7 @@ public class GameConfig {
     
     //Base config
     
-    public static final int BASE_LIVES = 9;
+    public static final int BASE_LIVES = 30;
     
     // Volume config
     public static final int MASTER_VOLUME = 80;
@@ -105,7 +105,7 @@ public class GameConfig {
     public static final int BASIC_UNIT_COST = 50;
     public static final int BASIC_UNIT_HP = 3;
     public static final double BASIC_UNIT_COOLDOWN = 0.8; // Shoots every 0.8 seconds
-    public static final int BASIC_UNIT_DAMAGE = 30;
+    public static final int BASIC_UNIT_DAMAGE = 50;
     
     public static final int SNIPER_UNIT_COST = 100;
     public static final int SNIPER_UNIT_HP = 8;
@@ -129,11 +129,38 @@ public class GameConfig {
     public static final int BIG_WALL_UNIT_COST = 500;
     public static final int BIG_WALL_UNIT_HP = 200;
     
-    public static final int COWARD_UNIT_COST = 50;    // Very cheap!
+    public static final int COWARD_UNIT_COST = 75;    // Very cheap!
     public static final int COWARD_UNIT_HP = 1;       // Dies instantly if caught off guard
     public static final double COWARD_UNIT_COOLDOWN = 1.0; 
     public static final int COWARD_UNIT_DAMAGE = 50;
     public static final int COWARD_SCARE_RANGE = s(50); // Distance before it hides
+    
+    // ========================================================================
+    // ── UNIT ABILITY UNLOCKS & STATS ────────────────────────────────────────
+    // ========================================================================
+    
+    // BASIC UNIT (Swarm Attack)
+    public static final int BASIC_SWARM_UNLOCK       = 2; // Fires at adjacent lanes
+    
+    // SNIPER UNIT (Frostbite / Weakness)
+    public static final int SNIPER_DEBUFF_UNLOCK     = 2; // Enemies deal less damage
+    public static final float SNIPER_FREEZE_WEAKNESS = 0.5f; // Deals 50% damage while frozen
+
+    // RAILGUN UNIT (Heat Trail)
+    public static final int RAILGUN_TRAIL_UNLOCK     = 2; // Leaves a burning line
+    public static final int RAILGUN_TRAIL_DAMAGE     = 25; // Damage per half-second
+
+    // ALCHEMIST UNIT (Corrosive Gas)
+    public static final int ALCHEMIST_CORROSIVE_UNLOCK = 2; // Puddles melt armor
+    public static final float ALCHEMIST_DMG_AMP        = 1.5f; // Take 50% more damage
+
+    // WALL UNITS (Thorns)
+    public static final int WALL_THORNS_UNLOCK       = 2; 
+    public static final float WALL_THORN_MULTIPLIER  = 1.0f; // Reflect 100% of damage
+    public static final int WALL_THORN_BASE_DMG      = 20;   // Minimum damage dealt back
+
+    // COWARD UNIT (Parting Gift)
+    public static final int COWARD_GIFT_UNLOCK       = 2; // Fires burst before hiding
     
     // ========================================================================
     // ── THE DIFFICULTY ENGINE (EASY BALANCING KNOBS) ────────────────────────
@@ -142,29 +169,26 @@ public class GameConfig {
     // --- 1. PLAYER POWER SPIKES (The "Grace Period" Creators) ---
     public static final int MAX_UNIT_LEVEL = 5;
     // Base ^ (Level-1). 
-    // At Lvl 5: Damage is 81x. HP is 256x. Cooldown is 52% (~2x faster).
-    public static final float LEVEL_HP_MULT       = 4.0f;  
-    public static final float LEVEL_DMG_MULT      = 3.0f;  
+    public static final float LEVEL_HP_MULT       = 3.0f;  
+    public static final float LEVEL_DMG_MULT      = 4.0f;  
     public static final float LEVEL_COOLDOWN_MULT = 0.85f; 
     public static final float LEVEL_VISUAL_SCALE  = 0.12f; 
 
     // --- 2. ECONOMY: THE HEAVY COST OF POWER ---
     // Placement Cost = Base * (PLACEMENT_COST_MULT ^ (Level - 1))
-    // At 2.5x: Sniper L1 = $100. Sniper L5 = $3,900. (Keeps L1 units viable!)
     public static final float PLACEMENT_COST_MULT = 2.5f;  
 
     // Upgrade Cost = Base * UPGRADE_BASE_MULT * (UPGRADE_EXP_MULT ^ (Level - 1))
     // Example Sniper ($100): L2=$1,000 | L3=$3,000 | L4=$9,000 | L5=$27,000
     public static final float UPGRADE_COST_BASE_MULT = 10f; 
-    public static final float UPGRADE_COST_EXP_MULT  = 3.0f; 
+    public static final float UPGRADE_COST_EXP_MULT  = 4.0f; 
 
     // --- 3. ENEMY THREAT (The Relentless Creep) ---
     // Instead of decimals, we use easy-to-read percentages.
     // +12% HP per wave means enemies double their HP every ~6 waves.
-    // By Wave 40, enemies have 93x HP. (You will NEED Level 5 units!)
     public static final double ENEMY_HP_GROWTH_PCT   = 12.0; // 12% increase per wave
-    public static final double ENEMY_DMG_GROWTH_PCT  = 5.0;  // 5% increase per wave
-    public static final double ENEMY_DROP_GROWTH_PCT = 10.0; // 10% more gold dropped per wave
+    public static final double ENEMY_DMG_GROWTH_PCT  = 12.0;  // 12% increase per wave
+    public static final double ENEMY_DROP_GROWTH_PCT = 20.0; // 20% more gold dropped per wave
 
     // ========================================================================
     
@@ -254,14 +278,14 @@ public class GameConfig {
     /** How much Enemy Damage increases per wave (0.05 = +5% per wave) */
     public static final float  DIFF_DMG_GROWTH      = 0.05f;
     
-    /** How many more enemies per wave (1.5 = 15 more enemies every 10 waves) */
-    public static final double DIFF_QUANTITY_GROWTH = 1.5;
+    /** How many more enemies per wave (3.5 = 35 more enemies every 10 waves) */
+    public static final double DIFF_QUANTITY_GROWTH = 3.5;
     
-    /** How much faster enemies spawn per wave (0.08 seconds faster every wave) */
-    public static final double DIFF_PACE_SPEEDUP    = 0.08;
+    /** How much faster enemies spawn per wave (0.12 seconds faster every wave) */
+    public static final double DIFF_PACE_SPEEDUP    = 0.12;
     
     /** The fastest enemies are allowed to spawn (don't set to 0 or game crashes!) */
-    public static final double MIN_SPAWN_INTERVAL   = 0.5;
+    public static final double MIN_SPAWN_INTERVAL   = 0.2;
     
     
     // ── ENEMY VARIETY SCALING ────────────────────────────────────────────────
@@ -336,5 +360,7 @@ public class GameConfig {
 
     // How much extra gold enemies drop per wave (0.10 = +10% per wave)
     public static final float DROP_GROWTH_PER_WAVE = 0.10f;
+    
+    
 
 }

@@ -42,7 +42,7 @@ public class AbilityManager {
             
             // Apply a massive SlowEffect (0.0 multiplier = frozen) to ALL enemies currently on screen
             for (Enemy e : world.getObjects(Enemy.class)) {
-                e.applyEffect(EffectFactory.createSlow(GameConfig.FREEZE_DURATION, 0.0f));
+                e.applyEffect(EffectFactory.createSlow(GameConfig.FREEZE_DURATION, 0.0f,1.0f));
             }
         }
     }

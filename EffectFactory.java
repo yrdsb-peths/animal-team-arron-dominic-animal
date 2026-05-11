@@ -5,8 +5,8 @@ public class EffectFactory {
      * @param duration Seconds it lasts
      * @param power 0.5f means 50% speed, 0.0f means frozen.
      */
-    public static StatusEffect createSlow(double duration, float power) {
-        return new SlowEffect(duration, power);
+    public static StatusEffect createSlow(double duration, float power, float weakness) {
+        return new SlowEffect(duration, power, weakness);
     }
 
     /** 
