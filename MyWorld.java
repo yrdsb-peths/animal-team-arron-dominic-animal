@@ -17,10 +17,12 @@ public class MyWorld extends World {
        
         // Define the layer order (first = on top, last = at bottom)
         setPaintOrder(
+            UpgradeCard.class,      // SHOP CARDS ON TOP
             BossIntroOverlay.class, // Cinemtatics on very top
             FloatingText.class,     // Damage/Money popups
             BlockSpark.class,
             UIText.class,           // UI Text
+            ShopBackground.class,   // SHOP COLOR BLOCK
             AbilityButton.class,    // UI Buttons
             UISpeedButton.class,
             UIUnitCard.class,       // Menu Cards

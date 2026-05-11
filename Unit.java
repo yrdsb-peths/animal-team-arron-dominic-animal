@@ -15,13 +15,23 @@ public abstract class Unit extends Actor {
     
     // Cooldown timer for attacks
     protected GameTimer attackCooldown;
+    
+    protected int level = 1;
+
 
     public Unit(int health, int laneIndex, int colIndex, double cooldownSeconds) {
-        this.health = health;
-        this.maxHealth = health;
+        // Find my current tech level from the registry
+        UnitRegistry.UnitData data = UnitRegistry.getByClass(this.getClass());
+        this.level = data.level;
+
+        // Apply Exponential Scaling immediately
+        this.maxHealth = (int)(health * Math.pow(GameConfig.LEVEL_HP_MULT, level - 1));
+        this.health = maxHealth;
         this.laneIndex = laneIndex;
         this.colIndex = colIndex;
-        this.attackCooldown = new GameTimer(cooldownSeconds, false);
+        
+        double scaledCD = cooldownSeconds * Math.pow(GameConfig.LEVEL_COOLDOWN_MULT, level - 1);
+        this.attackCooldown = new GameTimer(scaledCD, false);
     }
 
     @Override
@@ -69,6 +79,31 @@ public abstract class Unit extends Actor {
                 attackCooldown.start();
             }
         }
+    }
+        
+      
+    public abstract void updateVisual(); 
+    
+    public void upgrade() {
+        if (level >= GameConfig.MAX_UNIT_LEVEL) return;
+        level++;
+        
+        // Exponential Scaling
+        this.maxHealth = (int)(maxHealth * GameConfig.LEVEL_HP_MULT);
+        this.health = maxHealth;
+        
+        double currentCD = attackCooldown.getTotalFrames() / 60.0;
+        attackCooldown.setDuration(currentCD * GameConfig.LEVEL_COOLDOWN_MULT);
+        
+        updateVisual(); // Now this works!
+        
+        getWorld().addObject(new FloatingText("LVL " + level, UnitVisuals.getLevelColor(level), 30), getX(), getY());
+    }
+    
+    public int getUpgradeCost() {
+        // This now uses the fixed Registry method
+        int baseCost = UnitRegistry.getByClass(this.getClass()).cost;
+        return (int)(baseCost * (level * GameConfig.UPGRADE_COST_STEEPNESS));
     }
 
     /** Finds the furthest-left enemy in the exact same lane. */
@@ -152,5 +187,21 @@ public abstract class Unit extends Actor {
     public int getMaxHealth() {
         return maxHealth;
     }
+    
+    /** Called by the Shop to update units already on the field */
+    public void reactToGlobalUpgrade() {
+        this.level = UnitRegistry.getByClass(this.getClass()).level;
+        
+        // Recalculate Max HP and heal to full
+        UnitRegistry.UnitData data = UnitRegistry.getByClass(this.getClass());
+        int baseHP = getBaseHPFromConfig(); // Helper to get raw config value
+        this.maxHealth = (int)(baseHP * Math.pow(GameConfig.LEVEL_HP_MULT, level - 1));
+        this.health = maxHealth;
 
+        updateVisual();
+    }
+    
+    // Abstract helper to ensure we know the starting HP for scaling
+    protected abstract int getBaseHPFromConfig();
+    
 }

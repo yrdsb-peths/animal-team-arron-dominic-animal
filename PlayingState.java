@@ -18,7 +18,8 @@ public class PlayingState implements GameState {
         world.removeObjects(world.getObjects(null)); 
         ScoreManager.reset();
         sessionStartTime = System.currentTimeMillis();
-    
+        
+        UnitRegistry.resetLevels(); // Resets tech tree for this match
         // 1. Setup Background with a visual separator
         GreenfootImage bg = new GreenfootImage(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
         bg.setColor(new Color(30, 30, 50)); // Dark background
@@ -61,6 +62,9 @@ public class PlayingState implements GameState {
         int trayY = GameConfig.UI_TRAY_Y;
         int btnSpacing = GameConfig.s(175);
         int startX = GameConfig.s(220);
+        
+        
+        world.addObject(new UIText("[S] OPEN SHOP", 16, Color.CYAN), world.getWidth() - GameConfig.s(120), GameConfig.UI_TRAY_Y - 30);
     
         AbilityButton btn1 = new AbilityButton(1, "OVERCLOCK", GameConfig.OVERCLOCK_COST);
         AbilityButton btn2 = new AbilityButton(2, "TIME FREEZE", GameConfig.FREEZE_COST);
@@ -81,6 +85,7 @@ public class PlayingState implements GameState {
 
     @Override
     public void update(MyWorld world) {
+        String key = Greenfoot.getKey();
         // Run game logic
         waveManager.update(world);
         placementManager.update(world);
@@ -92,6 +97,10 @@ public class PlayingState implements GameState {
         waveDisplay.setText("WAVE: " + waveManager.getWaveNumber() + " | LIVES: " + base.lives);
         goldDisplay.setText("GOLD: " + CurrencyManager.getGold());
  
+        if (GameConfig.KEY_SHOP.equals(key)) {
+            world.getGSM().pushState(new ShopState());
+            return; // Stop processing this frame so we don't click things 'through' the shop
+        }
         // If Base dies, Game Over
         if (base.lives <= 0) {
             world.getGSM().changeState(new GameOverState());

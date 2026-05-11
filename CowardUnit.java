@@ -38,22 +38,20 @@ public class CowardUnit extends Unit {
         return !isScared; // If scared, enemies ignore me!
     }
 
-    private void updateVisual() {
-        GreenfootImage img = new GreenfootImage(40, 40);
-        
+    
+    @Override
+    public void updateVisual() {
+        // If scared, we show a special small "Hidden" image
         if (isScared) {
-            // HIDDEN: Just a tiny brown bump on the ground
-            img.setColor(new Color(130, 80, 30)); // Dirt brown
-            img.fillOval(10, 30, 20, 10);
+            GreenfootImage hidden = new GreenfootImage(20, 10);
+            hidden.setColor(new Color(130, 80, 30));
+            hidden.fillOval(0, 0, 20, 10);
+            setImage(hidden);
         } else {
-            // POPPED UP: A tall, bright yellow flower looking thing
-            img.setColor(Color.YELLOW);
-            img.fillOval(10, 0, 20, 20); // Head
-            img.setColor(Color.GREEN);
-            img.fillRect(18, 20, 4, 20); // Stem
+            setImage(UnitVisuals.draw(7, level, Color.YELLOW));
         }
-        
-        setImage(img);
-        setNormalImage(img); // Update hurt flash reference
+        setNormalImage(getImage());
     }
+    
+    @Override protected int getBaseHPFromConfig() { return GameConfig.COWARD_UNIT_HP; }
 }

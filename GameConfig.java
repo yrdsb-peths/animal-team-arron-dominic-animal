@@ -148,7 +148,8 @@ public class GameConfig {
     public static final Color LVL_2_COLOR = new Color(50, 255, 50);  // Green
     public static final Color LVL_3_COLOR = new Color(50, 150, 255); // Rare Blue
     public static final Color LVL_4_COLOR = new Color(200, 50, 255); // Epic Purple
-    public static final Color LVL_5_COLOR = new Color(255, 215, 0);  // Legendary Gold
+    //public static final Color LVL_5_COLOR = new Color(255, 215, 0);  // Legendary Gold
+    public static final Color LVL_5_COLOR = new Color(130, 100, 20); // Old, weathered Bronze
     
     // ── ATTACK & SHIELD RULES ──────────────────────────────────────────────
     public static final boolean BASIC_PROJECTILE_BYPASS   = false; // Standard bullets blocked
@@ -275,6 +276,14 @@ public class GameConfig {
         
     // ── ECONOMY & DROPS ──────────────────────────────────────────────────
     public static final double INTEREST_RATE = 0.05; // 5% of saved gold per wave
+    
+    // --- SHOP CONFIG ---
+    public static final String KEY_SHOP = "s"; // Press S to open shop
+    public static final int SHOP_CARD_WIDTH = s(140);
+    public static final int SHOP_CARD_HEIGHT = s(160);
+    public static final int SHOP_START_X = s(160); // Where the first card draws
+    public static final int SHOP_START_Y = s(240);
+    public static final int SHOP_SPACING_X = s(160);
     
     // ── ABILITIES ────────────────────────────────────────────────────────
     public static final int OVERCLOCK_COST = 300;

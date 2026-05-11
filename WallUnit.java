@@ -1,73 +1,95 @@
 import greenfoot.*;
 
 public class WallUnit extends Unit {
-    
-    // Keep track of which "stage" we are currently showing to avoid redrawing every frame
-    private int currentStage = 3;
+    protected int currentStage = 3;
 
     public WallUnit(int laneIndex, int colIndex) {
         super(GameConfig.WALL_UNIT_HP, laneIndex, colIndex, 999.0); 
         updateVisual();
     }
 
-    /** 
-     * We override takeDamage so that every time the wall is hit, 
-     * it checks if it needs to "shrink".
-     */
     @Override
     public void takeDamage(int amount) {
-        super.takeDamage(amount); // Do the normal health reduction and red flash
-        
-        // Calculate new stage
-        float hpPercent = (float)health / GameConfig.WALL_UNIT_HP;
-        int newStage;
-        
-        if (hpPercent > 0.66f) newStage = 3;
-        else if (hpPercent > 0.33f) newStage = 2;
-        else newStage = 1;
+        super.takeDamage(amount); 
+        float hpPercent = (float)health / maxHealth;
+        int newStage = (hpPercent > 0.66f) ? 3 : (hpPercent > 0.33f) ? 2 : 1;
 
-        // Only redraw if the stage actually changed
         if (newStage != currentStage) {
             currentStage = newStage;
             updateVisual();
         }
     }
 
-    private void updateVisual() {
-        int fullSize = 45;
-        // The canvas stays 45x45 so the unit doesn't "jump" around in the grid
-        GreenfootImage img = new GreenfootImage(fullSize, fullSize);
+    @Override
+    public void updateVisual() {
+        int size = 45;
+        GreenfootImage img = new GreenfootImage(size, size);
         
-        // Calculate how many pixels high the wall should be (15, 30, or 45)
-        int wallHeight = (fullSize / 3) * currentStage;
-        
-        // Calculate the Y starting position so it stays "on the ground" (bottom of the cell)
-        int yOffset = fullSize - wallHeight;
+        // Height scaling based on HP stage
+        int wallH = (size / 3) * currentStage;
+        int yOff = size - wallH;
+        Color lvlColor = UnitVisuals.getLevelColor(level);
 
-        // 1. Draw the main block
-        img.setColor(new Color(100, 70, 40)); // Brown
-        img.fillRect(0, yOffset, fullSize, wallHeight);
-        
-        // 2. Draw the black border
-        img.setColor(Color.BLACK);
-        img.drawRect(0, yOffset, fullSize - 1, wallHeight - 1);
-        
-        // 3. Draw the "brick lines"
-        // If stage 3: 2 lines. If stage 2: 1 line. If stage 1: 0 lines.
+        // 1. MATERIAL SELECTION (The "Respect" Factor)
+        Color primary = new Color(100, 70, 40); // Lvl 1: Wood/Dirt
+        if (level == 2) primary = new Color(120, 120, 120); // Lvl 2: Stone
+        if (level == 3) primary = new Color(70, 90, 130);   // Lvl 3: Reinforced Steel
+        if (level == 4) primary = new Color(40, 20, 60);    // Lvl 4: Obsidian
+        if (level == 5) primary = new Color(220, 200, 100); // Lvl 5: Divine Gold
+
+        // 2. DRAW BASE BLOCK
+        img.setColor(primary);
+        img.fillRect(2, yOff, size-4, wallH);
+
+        // 3. DRAW DYNAMIC BRICK LINES (The "Cool" Lines)
+        img.setColor(new Color(0, 0, 0, 150));
         for (int i = 1; i < currentStage; i++) {
-            int lineY = yOffset + (i * (wallHeight / currentStage));
-            img.drawLine(0, lineY, fullSize, lineY);
+            int lineY = yOff + (i * (wallH / currentStage));
+            img.drawLine(2, lineY, size-3, lineY);
+        }
+        // Vertical mortar lines (offset per row)
+        for (int i = 0; i < currentStage; i++) {
+            int rowY = yOff + (i * (wallH / currentStage));
+            int midY = rowY + (wallH / currentStage / 2);
+            if (i % 2 == 0) img.drawLine(size/2, rowY, size/2, rowY + (wallH/currentStage));
+            else {
+                img.drawLine(size/4, rowY, size/4, rowY + (wallH/currentStage));
+                img.drawLine(3*size/4, rowY, 3*size/4, rowY + (wallH/currentStage));
+            }
+        }
+
+        // 4. LEVEL-UP EVOLUTION (Details)
+        img.setColor(lvlColor);
+        if (level >= 2) img.drawRect(2, yOff, size-5, wallH-1); // Edge Highlight
+        
+        if (level >= 3) { // IRON BARS (Blue Stage)
+            img.setColor(new Color(200, 200, 255, 100));
+            img.fillRect(8, yOff, 4, wallH);
+            img.fillRect(size-12, yOff, 4, wallH);
+        }
+
+        if (level >= 4) { // RUNIC GLOW (Purple Stage)
+            img.setColor(lvlColor);
+            img.drawOval(size/2-5, yOff + wallH/2-5, 10, 10);
+            img.fillOval(size/2-2, yOff + wallH/2-2, 4, 4);
+        }
+
+        if (level == 5) { // THE AEGIS (Golden Stage)
+            // Top Spikes
+            int[] sx = {5, 10, 15, 20, 25, 30, 35, 40};
+            for(int x : sx) {
+                img.fillPolygon(new int[]{x-3, x, x+3}, new int[]{yOff, yOff-6, yOff}, 3);
+            }
+            // Golden Shield Crest
+            img.setColor(Color.WHITE);
+            img.drawRect(size/2-8, yOff+4, 16, wallH-8);
         }
 
         setImage(img);
-        
-        // IMPORTANT: The base Unit class uses 'normalImage' for the hurt-flash logic.
-        // We need to tell the parent class that the "normal" look has changed.
-        setNormalImage(img); 
+        setNormalImage(img);
     }
 
-    @Override
-    protected void attack(Enemy target) {
-        // Walls still don't attack!
-    }
+    @Override protected void attack(Enemy target) {}
+    
+    @Override protected int getBaseHPFromConfig() { return GameConfig.WALL_UNIT_HP; }
 }
