@@ -71,8 +71,10 @@ public class LaneManager {
      * @param lane  Lane index 0 (top) to NUM_LANES-1 (bottom).
      * @return      Y coordinate of the lane's centre row.
      */
-    public static int getLaneY(int lane) {
-        return GameConfig.LANE_HEIGHT / 2 + lane * GameConfig.LANE_HEIGHT;
+    
+     public static int getLaneY(int lane) {
+        // Stays the same, but now it naturally stops at 500
+        return (lane * GameConfig.LANE_HEIGHT) + (GameConfig.LANE_HEIGHT / 2);
     }
 
     /**
@@ -99,10 +101,15 @@ public class LaneManager {
      * @param y  Raw pixel Y from Greenfoot.getMouseInfo().getY().
      * @return   Lane index in [0, NUM_LANES-1].
      */
+    /** Converts a raw Y pixel to a lane index. */
     public static int laneFromY(int y) {
+        // If clicking in the UI tray, return -1 (invalid)
+        if (y > GameConfig.PLAYABLE_HEIGHT) return -1;
+        
         int lane = y / GameConfig.LANE_HEIGHT;
         return Math.max(0, Math.min(GameConfig.NUM_LANES - 1, lane));
     }
+
 
     /**
      * Converts a raw X pixel to a column index.
@@ -168,12 +175,11 @@ public class LaneManager {
         if (!inBounds(lane, col)) return null;
         return unitGrid[lane][col];
     }
-
-
+    
     // ─────────────────────────────────────────────────────────────────────────
     // PRIVATE HELPERS
     // ─────────────────────────────────────────────────────────────────────────
-
+    
     private static boolean inBounds(int lane, int col) {
         return lane >= 0 && lane < GameConfig.NUM_LANES
             && col  >= 0 && col  < GameConfig.GRID_COLS;

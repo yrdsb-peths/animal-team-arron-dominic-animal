@@ -62,24 +62,31 @@ public class GameConfig {
     // ── Game Engine Speed ─────────────────────────────────────────────────────
     public static int GAME_SPEED = 1; // 1x, 2x, or 4x speed
 
-    // ── World Size ────────────────────────────────────────────────────────────
-    public static final int WORLD_WIDTH  = 800;   // adjust to your game
-    public static final int WORLD_HEIGHT = 500;   // adjust to your game
+    // ── World & UI Layout ─────────────────────────────────────────────────────
+    public static final int PLAYABLE_HEIGHT = 520;   // Increase this for taller lanes!
+    public static final int NUM_LANES = 5;           // Fewer lanes = taller lanes!
+    public static final int WORLD_WIDTH  = 800;
+    public static final int UI_TRAY_HEIGHT = s(80);  // Make this shorter!
     
-      // ── Scale ─────────────────────────────────────────────────────────────────
-    // Change this one number to scale the whole game up or down.
-    // 1.0 = normal. 1.5 = 50% bigger. 0.75 = 25% smaller.
+    // Automatically calculates perfect layout (DO NOT CHANGE THESE MATH LINES)
+    public static final int UI_TRAY_Y = PLAYABLE_HEIGHT + (UI_TRAY_HEIGHT / 2);
+    public static final int WORLD_HEIGHT = PLAYABLE_HEIGHT + UI_TRAY_HEIGHT; 
+    public static final int LANE_HEIGHT = PLAYABLE_HEIGHT / NUM_LANES; 
+    
+    // ── Visual Scaling ────────────────────────────────────────────────────────
+    public static final int UNIT_SIZE = s(50); // Change this to make your plants bigger/smaller!
     public static final double SCALE = 1.0;
+    public static int s(int value) { return (int)(value * SCALE); }
 
-    /** Scales any pixel value by SCALE. Use for all sizes and positions. */
-    public static int s(int value) {
-        return (int)(value * SCALE);
-    }
+    // ── UI SCROLL CONFIG ──────────────────────────────────────────────────────
+    public static final int MENU_X = s(50);
+    public static final int MENU_TOP_LIMIT = s(80);    
+    // DYNAMIC: Scroll naturally stops exactly where the UI Tray begins!
+    public static final int MENU_BOTTOM_LIMIT = PLAYABLE_HEIGHT - s(40); 
+    public static final int MENU_CARD_SPACING = s(65);    
 
     // Lane config
     
-    public static final int NUM_LANES = 5;
-    public static final int LANE_HEIGHT = WORLD_HEIGHT / NUM_LANES;
     public static final int GRID_COLS = 9;        // columns units can be placed in
     public static final int BASE_X = s(60);       // left-edge X where Base lives
     public static final int GRID_START_X = s(120); // first placeable column
@@ -165,7 +172,7 @@ public class GameConfig {
     //Heavy shield
     public static final int HEAVY_SHIELD_HP = 3000;
     public static final int HEAVY_SHIELD_DAMAGE = 5;
-    public static final float HEAVY_SHIELD_SPEED = 0.15f; 
+    public static final float HEAVY_SHIELD_SPEED = 0.3f; 
     public static final double HEAVY_SHIELD_ATK_COOLDOWN = 2.0;
      
     public static final int SLIME_ENEMY_HP = 400;
@@ -276,11 +283,5 @@ public class GameConfig {
 
     // How much extra gold enemies drop per wave (0.10 = +10% per wave)
     public static final float DROP_GROWTH_PER_WAVE = 0.10f;
-    
-    
-    // ── UI SCROLL CONFIG ─────────────────────────────────────────────────────
-    public static final int MENU_X = s(50);
-    public static final int MENU_TOP_LIMIT = s(80);    // Highest a card can go
-    public static final int MENU_BOTTOM_LIMIT = s(420); // Lowest a card can go
-    public static final int MENU_CARD_SPACING = s(65);
+
 }

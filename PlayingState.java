@@ -18,58 +18,63 @@ public class PlayingState implements GameState {
         world.removeObjects(world.getObjects(null)); 
         ScoreManager.reset();
         sessionStartTime = System.currentTimeMillis();
-
-        world.setBackground(new GreenfootImage(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
-        world.getBackground().setColor(new Color(30, 30, 50));
-        world.getBackground().fill();
-
-        // Spawn Base
+    
+        // 1. Setup Background with a visual separator
+        GreenfootImage bg = new GreenfootImage(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+        bg.setColor(new Color(30, 30, 50)); // Dark background
+        bg.fill();
+        // Draw the "Ground" line at Y=500 to separate UI from Game
+        bg.setColor(Color.BLACK);
+        bg.fillRect(0, GameConfig.PLAYABLE_HEIGHT, world.getWidth(), 5); 
+        world.setBackground(bg);
+    
+        // 2. Spawn Base (Only as tall as the PLAYABLE area, not the whole world!)
         base = new Base();
-        GreenfootImage baseImg = new GreenfootImage(50, GameConfig.WORLD_HEIGHT);
+        GreenfootImage baseImg = new GreenfootImage(50, GameConfig.PLAYABLE_HEIGHT);
         baseImg.setColor(Color.BLUE);
-        baseImg.fillRect(0, 0, 50, GameConfig.WORLD_HEIGHT);
+        baseImg.fillRect(0, 0, 50, GameConfig.PLAYABLE_HEIGHT);
         base.setImage(baseImg);
-        world.addObject(base, GameConfig.BASE_X, GameConfig.WORLD_HEIGHT / 2);
-
-        // Initialize Managers
+        // Center it vertically in the top 500 pixels
+        world.addObject(base, GameConfig.BASE_X, GameConfig.PLAYABLE_HEIGHT / 2);
+    
+        // 3. Initialize Managers
         LaneManager.reset();
         CurrencyManager.reset();
         CalamityManager.reset();
         waveManager = new WaveManager();
         placementManager = new PlacementManager();
-
-        // Start the game!
+    
+        // 4. Start the game logic
         waveManager.startFirstWave();
-        GameConfig.GAME_SPEED = 1;//Rest game speed
-        // UI
+        GameConfig.GAME_SPEED = 1;
+    
+        // 5. TOP UI (Wave/Gold)
         waveDisplay = new UIText("WAVE: 1", GameConfig.s(22), Color.WHITE);
         goldDisplay = new UIText("GOLD: " + CurrencyManager.getGold(), GameConfig.s(22), Color.YELLOW);
-        
         world.addObject(waveDisplay, GameConfig.s(90), GameConfig.s(20));
         world.addObject(goldDisplay, GameConfig.s(300), GameConfig.s(20));
-        UISpeedButton speedBtn = new UISpeedButton();
-        world.addObject(speedBtn, world.getWidth() - GameConfig.s(70), world.getHeight() - GameConfig.s(30));
-        
         uiElements.add(waveDisplay);
         uiElements.add(goldDisplay);
-        uiElements.add(speedBtn);
-        
-        int btnWidth = GameConfig.s(170);
-        int startX = GameConfig.s(220); // Push to the right so it doesn't overlap the unit cards
-        int bottomY = GameConfig.WORLD_HEIGHT - GameConfig.s(30);
-
+    
+        // 6. BOTTOM UI TRAY (Ability Buttons & Speed)
+        // We use the new UI_TRAY_Y (e.g., 550) to center them in the bottom tray
+        int trayY = GameConfig.UI_TRAY_Y;
+        int btnSpacing = GameConfig.s(175);
+        int startX = GameConfig.s(220);
+    
         AbilityButton btn1 = new AbilityButton(1, "OVERCLOCK", GameConfig.OVERCLOCK_COST);
         AbilityButton btn2 = new AbilityButton(2, "TIME FREEZE", GameConfig.FREEZE_COST);
         AbilityButton btn3 = new AbilityButton(3, "TAC NUKE", GameConfig.NUKE_COST);
-
-        world.addObject(btn1, startX, bottomY);
-        world.addObject(btn2, startX + btnWidth, bottomY);
-        world.addObject(btn3, startX + (btnWidth * 2), bottomY);
-
-        uiElements.add(btn1);
-        uiElements.add(btn2);
-        uiElements.add(btn3);
+        UISpeedButton speedBtn = new UISpeedButton();
+    
+        world.addObject(btn1, startX, trayY);
+        world.addObject(btn2, startX + btnSpacing, trayY);
+        world.addObject(btn3, startX + (btnSpacing * 2), trayY);
+        world.addObject(speedBtn, world.getWidth() - GameConfig.s(70), trayY);
+    
+        uiElements.add(btn1); uiElements.add(btn2); uiElements.add(btn3); uiElements.add(speedBtn);
         
+        // 7. Unit Selection Menu
         createUnitMenu(world);
         GameRNG.randomize();
     }
