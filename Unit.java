@@ -143,5 +143,10 @@ public abstract class Unit extends Actor {
         getImage().setColor(new Color(100, 60, 20, 100));
         getImage().fill();
     }
+    
+    public int getMaxHealth() {
+        // For BasicUnit, this might need to include stack logic!
+        return GameConfig.BASIC_UNIT_HP; // Simplified for now
+    }
 
 }

@@ -1,8 +1,21 @@
 public class GameConfig {
 
-    // ── Debug ─────────────────────────────────────────────────────────────────
-    public static boolean DEBUG_MODE = false;
+   // ── DEBUG SETTINGS ──────────────────────────────────────────────────
+    public static final boolean DEBUG_MODE = true; // Set to false for final build
+
+    // ── CALAMITY MASTER SETTINGS ────────────────────────────────────────
+    public static final int CALAMITY_INTERVAL = 5;      // Happens every 5 waves
     
+    // ── SPECIFIC CALAMITY STATS ─────────────────────────────────────────
+    public static final double DROUGHT_SPEED_MULT = 0.5;
+    public static final int    CRASH_DURATION     = 5;
+    public static final int    CRASH_PRICE_MULT   = 5;
+    public static final int    RAIN_TICK_CHANCE   = 10; // Out of 1000
+    public static final int    FOG_REVEAL_RANGE   = s(150);
+    
+    // Laser
+    public static final int    LASER_PREP_TIME    = 90; // Frames before it hits
+    public static final int    LASER_THICKNESS    = s(60);
     // ── Game Engine Speed ─────────────────────────────────────────────────────
     public static int GAME_SPEED = 1; // 1x, 2x, or 4x speed
 
@@ -202,13 +215,8 @@ public class GameConfig {
     // How much extra gold enemies drop per wave (0.10 = +10% per wave)
     public static final float DROP_GROWTH_PER_WAVE = 0.10f;
     
-    // ── CALAMITY SETTINGS ──────────────────────────────────────────────────
-    public static final int CALAMITY_INTERVAL = 5;      // Every 5 waves
-    public static final int CRASH_DURATION = 5;         // Financial Crash lasts 5 waves
-    public static final int CRASH_PRICE_MULT = 5;       // Prices x5
-    public static final double DROUGHT_SPEED_MULT = 0.5; // 50% fire rate
-    public static final int FOG_REVEAL_RANGE = s(150);  // Distance units "see" in fog
-    public static final int RAIN_CHANCE_PER_ACT = 10;   // Chance for a raindrop per frame
+
+    
     
     // ── UI SCROLL CONFIG ─────────────────────────────────────────────────────
     public static final int MENU_X = s(50);

@@ -3,44 +3,66 @@ import java.util.List;
 
 public class CalamityManager {
     private static int lastCalamityWave = 0;
-    
-    public static void checkCalamity(MyWorld world, int wave) {
-        // Trigger every 5 waves, starting at wave 5
-        if (wave >= 5 && wave % 5 == 0 && wave != lastCalamityWave) {
+    private static int crashWavesLeft = 0;
+    private static boolean fogActive = false;
+
+    /** Main loop: called by PlayingState every frame */
+    public static void update(MyWorld world, int wave) {
+        // 1. Check for manual Debug Triggers
+        if (GameConfig.DEBUG_MODE) {
+            handleDebugKeys(world);
+        }
+
+        // 2. Automatic logic (runs once per wave break)
+        if (wave >= GameConfig.CALAMITY_INTERVAL && wave % GameConfig.CALAMITY_INTERVAL == 0 && wave != lastCalamityWave) {
             lastCalamityWave = wave;
-            triggerRandomCalamity(world, wave);
+            triggerRandomCalamity(world);
         }
-    }
-
-    private static void triggerRandomCalamity(MyWorld world, int wave) {
-        int choice = GameRNG.getRandomNumber(6); // 0 to 5
         
-        switch(choice) {
-            case 0: runEarthquake(world); break;
-            case 1: runMatrix(world); break;
-            case 2: runGreatDrought(world); break;
-            case 3: runStampede(world); break;
-            case 4: runRumbling(world); break;
-            case 5: runLaserBeam(world); break;
+        // 3. Persistent effect logic
+        if (world.getGSM().getWaveNumber() > lastCalamityWave) {
+            if (crashWavesLeft > 0) crashWavesLeft--;
         }
     }
 
-    // --- CALAMITY LOGIC ---
+    private static void handleDebugKeys(MyWorld world) {
+        String key = Greenfoot.getKey();
+        if (key == null) return;
+
+        // Press letters to trigger specific calamities for testing
+        if (key.equals("f")) runFinancialCrash(world);
+        if (key.equals("e")) runEarthquake(world);
+        if (key.equals("m")) runMatrix(world);
+        if (key.equals("d")) runGreatDrought(world);
+        if (key.equals("l")) runLaserBeam(world);
+        if (key.equals("p")) runPurpleRain(world);
+        if (key.equals("g")) runGreatFog(world);
+    }
+
+    private static void triggerRandomCalamity(MyWorld world) {
+        int choice = GameRNG.getRandomNumber(7);
+        if (choice == 0) runEarthquake(world);
+        else if (choice == 1) runMatrix(world);
+        else if (choice == 2) runGreatDrought(world);
+        else if (choice == 3) runLaserBeam(world);
+        else if (choice == 4) runPurpleRain(world);
+        else if (choice == 5) runFinancialCrash(world);
+        else if (choice == 6) runGreatFog(world);
+    }
+
+    // --- IMPLEMENTATIONS ---
 
     private static void runEarthquake(MyWorld world) {
-        announce(world, "CALAMITY: EARTHQUAKE", "All units HP reduced by 50%!", Color.ORANGE);
-        world.startShake(100, 15);
-        List<Unit> units = world.getObjects(Unit.class);
-        for (Unit u : units) {
-            u.takeDamage(u.health / 2);
+        announce(world, "EARTHQUAKE", "Buildings crumble! -50% HP", Color.ORANGE);
+        world.startShake(120, 15);
+        for (Unit u : world.getObjects(Unit.class)) {
+            u.takeDamage(u.getMaxHealth() / 2);
         }
     }
 
     private static void runMatrix(MyWorld world) {
-        announce(world, "CALAMITY: THE MATRIX", "Diagonal corruption detected!", Color.CYAN);
-        // Diagonal math: laneIndex + colIndex is even or odd
-        List<Unit> units = world.getObjects(Unit.class);
-        for (Unit u : units) {
+        announce(world, "THE MATRIX", "Diagonal units deleted!", Color.CYAN);
+        for (Unit u : world.getObjects(Unit.class)) {
             if ((u.getLaneIndex() + u.getColIndex()) % 2 == 0) {
                 u.die();
             }
@@ -48,31 +70,37 @@ public class CalamityManager {
     }
 
     private static void runGreatDrought(MyWorld world) {
-        announce(world, "CALAMITY: GREAT DROUGHT", "Plants are parched! Attack speed halved.", Color.YELLOW);
-        List<Unit> units = world.getObjects(Unit.class);
-        for (Unit u : units) {
-            u.applyDrought(); // You'll need to add this to Unit.java
-        }
+        announce(world, "GREAT DROUGHT", "Plants are parched! 50% Speed", Color.YELLOW);
+        for (Unit u : world.getObjects(Unit.class)) u.applyDrought();
+    }
+
+    private static void runFinancialCrash(MyWorld world) {
+        crashWavesLeft = GameConfig.CRASH_DURATION;
+        announce(world, "FINANCIAL CRASH", "Prices x5 for 5 waves!", Color.RED);
     }
 
     private static void runLaserBeam(MyWorld world) {
         int targetLane = GameRNG.getRandomNumber(GameConfig.NUM_LANES);
-        announce(world, "CALAMITY: ORBITAL STRIKE", "Lane " + (targetLane+1) + " is being erased!", Color.RED);
+        announce(world, "ORBITAL STRIKE", "Lane " + (targetLane+1) + " targetted!", Color.RED);
         world.addObject(new CalamityLaser(targetLane), world.getWidth()/2, LaneManager.getLaneY(targetLane));
     }
 
-    private static void runStampede(MyWorld world) {
-        announce(world, "CALAMITY: STAMPEDE", "A horde of Breakers approaches!", Color.RED);
-        // We will tell WaveManager to force the next wave to be 100% Breakers
-        WaveManager.forceNextWaveType(WaveManager.EnemySpawn.KAMIKAZE);
+    private static void runPurpleRain(MyWorld world) {
+        announce(world, "PURPLE RAIN", "Acid rain incoming!", Color.MAGENTA);
+        world.addObject(new PurpleRainController(), 0, 0);
     }
 
-    private static void runRumbling(MyWorld world) {
-        announce(world, "CALAMITY: THE RUMBLING", "The heavy weights are here.", Color.GRAY);
-        WaveManager.forceNextWaveType(WaveManager.EnemySpawn.TANK);
+    private static void runGreatFog(MyWorld world) {
+        fogActive = true;
+        announce(world, "GREAT FOG", "Vision obscured!", Color.LIGHT_GRAY);
+        world.addObject(new FogOverlay(), world.getWidth()/2, world.getHeight()/2);
     }
 
     private static void announce(MyWorld world, String title, String sub, Color c) {
-        world.getGSM().pushState(new BossCinematicState(title + "\n" + sub, 180));
+        world.getGSM().pushState(new BossCinematicState(title + "\n" + sub, 120));
     }
+
+    public static int getPriceMultiplier() { return (crashWavesLeft > 0) ? GameConfig.CRASH_PRICE_MULT : 1; }
+    public static boolean isFogActive() { return fogActive; }
+    public static void stopFog() { fogActive = false; }
 }

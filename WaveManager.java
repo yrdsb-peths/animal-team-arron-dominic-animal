@@ -72,6 +72,8 @@ public class WaveManager {
 
     /**Warn user about slime*/
     private boolean slimeDiscovered = false;
+    
+    private static int forcedEnemyType = -1;
     // ─────────────────────────────────────────────────────────────────────────
     // LIFECYCLE
     // ─────────────────────────────────────────────────────────────────────────
@@ -115,6 +117,12 @@ public class WaveManager {
 
         for (int i = 0; i < enemyCount; i++) {
             int lane = GameRNG.getRandomNumber(GameConfig.NUM_LANES);
+            //Forced Wave
+            if (forcedEnemyType != -1) {
+                spawnQueue.add(new EnemySpawn(forcedEnemyType, lane));
+                continue; // Skip all the random rolls below
+            }
+
             int roll = GameRNG.getRandomNumber(100);
 
             // Calculate current chances
@@ -143,6 +151,7 @@ public class WaveManager {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.BASIC, lane));
             }
         }
+        forcedEnemyType = -1; 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -237,8 +246,10 @@ public class WaveManager {
             world.addObject(new FloatingText(msg, Color.YELLOW, 180), world.getWidth() / 2, world.getHeight() / 2);
         }
     }
-
-
+    
+    public static void forceNextWaveType(int type) {
+        forcedEnemyType = type;
+    }
     // ─────────────────────────────────────────────────────────────────────────
     // QUERIES — read by HUD and PlayingState
     // ─────────────────────────────────────────────────────────────────────────
@@ -301,4 +312,6 @@ public class WaveManager {
             return e;
         }
     }
+    
+    
 }

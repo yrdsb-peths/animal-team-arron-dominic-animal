@@ -105,4 +105,8 @@ public class PlayingState implements GameState {
             uiElements.add(card);
         }
     }
+        
+    public int getWaveNumber() {
+        return waveManager.getWaveNumber();
+    }
 }

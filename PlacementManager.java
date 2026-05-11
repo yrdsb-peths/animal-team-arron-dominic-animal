@@ -113,8 +113,9 @@ public class PlacementManager {
     
         // NORMAL LOGIC: Block if occupied by anything else
         if (existingUnit != null) return; 
-    
-        if (CurrencyManager.spend(data.cost)) {
+        int baseCost = data.cost;
+        int finalCost = baseCost * CalamityManager.getPriceMultiplier();
+        if (CurrencyManager.spend(finalCost)) {
             Unit u = data.spawner.create(lane, col);
             LaneManager.occupy(lane, col, u);
             world.addObject(u, LaneManager.getCellX(col), LaneManager.getLaneY(lane));

@@ -125,4 +125,13 @@ public class GameStateManager {
     public GameState peekState() {
         return stateStack.isEmpty() ? null : stateStack.peek();
     }
+    
+    public int getWaveNumber() {
+        // Check if the current top state is actually the PlayingState
+        if (isState(PlayingState.class)) {
+            // "Peek" at the state, cast it to PlayingState, and get the number
+            return ((PlayingState)peekState()).getWaveNumber();
+        }
+        return -1; // Return -1 if we are in a menu or game over
+    }
 }

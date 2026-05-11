@@ -61,7 +61,18 @@ public abstract class Enemy extends Actor {
         }
 
         updateBehavior(world);
-
+        
+        if (CalamityManager.isFogActive()) {
+            List<Unit> nearby = getObjectsInRange(GameConfig.FOG_REVEAL_RANGE, Unit.class);
+            if (nearby.isEmpty()) {
+                getImage().setTransparency(0); // Hidden!
+            } else {
+                getImage().setTransparency(255); // Spotted!
+            }
+        } else {
+            getImage().setTransparency(255); // Normal
+        }
+        
         if (getWorld() != null) {
             checkHitbox(world);
             checkOffScreen(world);
