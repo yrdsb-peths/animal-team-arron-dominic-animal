@@ -133,7 +133,7 @@ public class GameConfig {
     
     public static final int ALCHEMIST_UNIT_COST = 200;
     public static final int ALCHEMIST_UNIT_HP = 4;
-    public static final double ALCHEMIST_UNIT_COOLDOWN = 4.0; 
+    public static final double ALCHEMIST_UNIT_COOLDOWN = 3.0; 
     public static final int ALCHEMIST_UNIT_DAMAGE = 70; // High impact damage
     public static final float ALCHEMIST_DMG_AMP = 1.5f; 
     

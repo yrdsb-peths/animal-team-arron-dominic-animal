@@ -1,6 +1,3 @@
-// ==================================================
-// FILE: ./BasicUnit.java
-// ==================================================
 import greenfoot.*;
 import java.util.List;
 
@@ -8,77 +5,58 @@ public class BasicUnit extends Unit {
     private int stackCount = 1;
     private boolean isRaged = false;
     private GameTimer domainTimer = new GameTimer(10.0, true); 
-    private DomainExpansion myDomain = null; // Track our domain!
+    private DomainExpansion myDomain = null; 
     private GameTimer domainRestTimer = new GameTimer(7.0, false); 
     private boolean domainIsReady = true;
-    private int droneRotation = 0; // Animates the Lvl 2 Drones
-    private double animTimer = 0;
+
+    // --- ANIMATION CLOCK ---
+    private float orbitAngle = 0;
 
     public BasicUnit(int laneIndex, int colIndex) {
         super(GameConfig.BASIC_UNIT_HP, laneIndex, colIndex, GameConfig.BASIC_UNIT_COOLDOWN);
         this.stackCount = 1; 
-        // CRITICAL: You must start the timer or it stays at 10.0 forever!
         domainTimer.start(); 
         updateVisual();
     }
     
     @Override
     protected void updateBehavior(MyWorld world) {
-        // 1. RADAR CHECK
+        // --- ANIMATION HOOK ---
+        // Speed increases with level and Rage
+        float speedMult = (float)(1.0 + (level * 0.5));
+        if (isRaged) speedMult *= 2.5f;
+        orbitAngle += speedMult * GameConfig.GAME_SPEED;
+        updateVisual(); 
+        // ----------------------
+
         List<Enemy> neighbors = getObjectsInRange(GameConfig.s(120), Enemy.class);
         boolean enemyInPersonalSpace = !neighbors.isEmpty();
     
-        // 2. RAGE STATE TOGGLE (No more setDuration!)
         if (level >= GameConfig.BASIC_RAGE_UNLOCK) {
-            if (enemyInPersonalSpace && !isRaged) {
-                isRaged = true;
-                updateVisual();
-            } else if (!enemyInPersonalSpace && isRaged) {
-                isRaged = false;
-                updateVisual();
-            }
+            if (enemyInPersonalSpace && !isRaged) isRaged = true;
+            else if (!enemyInPersonalSpace && isRaged) isRaged = false;
         }
 
-        // 3. COMMANDER DOMAIN (Level 5)
         if (level >= GameConfig.BASIC_DOMAIN_UNLOCK) {
-            // PHASE 1: Domain is currently active in the world
             if (myDomain != null && myDomain.getWorld() != null) {
-                domainIsReady = false; // Cannot be ready while domain is out
-                domainRestTimer.stop(); // Keep rest timer paused
-            } 
-            else {
-                // PHASE 2: Domain just vanished, start the 5 second rest
+                domainIsReady = false; 
+                domainRestTimer.stop(); 
+            } else {
                 if (!domainIsReady && !domainRestTimer.isActive() && !domainRestTimer.isExpired()) {
                     domainRestTimer.reset();
                     domainRestTimer.start();
                 }
-        
-                /// PHASE 3: Tick the rest timer
                 domainRestTimer.update(world);
-            
-                if (domainRestTimer.isExpired()) {
-                    domainIsReady = true;
-                }
-            
-                // PHASE 4: Trigger Logic
+                if (domainRestTimer.isExpired()) domainIsReady = true;
                 if (domainIsReady) {
-                    // A. Check for enemy (The "Panic" Trigger)
                     boolean enemyNearby = !getObjectsInRange(GameConfig.s(150), Enemy.class).isEmpty();
-                    
-                    // B. Check the 10-second timer (The "Automatic" Trigger)
                     domainTimer.update(world);
-            
                     if (enemyNearby || domainTimer.isExpired()) {
                         myDomain = new DomainExpansion(GameConfig.s(160));
                         world.addObject(myDomain, getX(), getY());
-                        
-                        // Clean up for next cycle
                         domainRestTimer.reset(); 
-                        domainTimer.reset(); // Reset the 10s automatic timer
+                        domainTimer.reset();
                         domainIsReady = false;
-                        
-                        if (enemyNearby) System.out.println("!!! DOMAIN: TRIGGERED BY ENEMY");
-                        else System.out.println("!!! DOMAIN: TRIGGERED AUTOMATICALLY");
                     }
                 }
             }
@@ -90,70 +68,168 @@ public class BasicUnit extends Unit {
         stackCount++;
         double levelHPBoost = Math.pow(GameConfig.LEVEL_HP_MULT, this.level - 1);
         int unitBaseHPAtCurrentLevel = (int)(GameConfig.BASIC_UNIT_HP * levelHPBoost);
-        
         int newMaxHP = (int)(unitBaseHPAtCurrentLevel * (stackCount * 0.6 + Math.sqrt(stackCount) * 0.4));
-        
         this.health += (newMaxHP - this.maxHealth); 
         this.maxHealth = newMaxHP;
-        
-        updateVisual();
     }
 
+    /**
+     * THE EVOLUTION ENGINE
+     * Lvl 1-2: Solid & Heavy
+     * Lvl 3-4: The Swarm
+     * Lvl 5: The Ultimate Divine
+     */
     @Override
     public void updateVisual() {
-        // Get the core chassis we designed above
-        GreenfootImage img = UnitVisuals.draw(1, level, Color.GREEN);
-        int c = img.getWidth() / 2;
-        int b = GameConfig.UNIT_SIZE / 2;
-        animTimer += 0.1;
-    
-        // --- LEVEL 2: ORBITAL DEFENSE DRONES ---
-        if (level >= 2) {
-            // We move the drones in a wide figure-eight outside the unit
-            int dx = (int)(Math.sin(animTimer) * 35);
-            int dy = (int)(Math.cos(animTimer * 0.5) * 15);
-            
-            drawCoolDrone(img, c + dx, c + dy - 25); // Top Drone
-            drawCoolDrone(img, c - dx, c - dy + 25); // Bottom Drone
-        }
-    
-        // --- LEVEL 3: RAGE OVERLOAD ---
-        if (isRaged) {
-            // Pulse a red "Warning" ring around the unit
-            int pulse = (int)(Math.abs(Math.sin(animTimer * 2)) * 20);
-            img.setColor(new Color(255, 0, 0, 150 - pulse * 5));
-            img.drawOval(c - b - pulse, c - b - pulse, (b*2) + pulse*2, (b*2) + pulse*2);
-            
-            // Red Hot Core
-            img.setColor(new Color(255, 50, 50));
-            img.fillOval(c-6, c-6, 12, 12);
-        }
+        int size = GameConfig.s(90); // Increased size to allow for massive orbits
+        GreenfootImage img = new GreenfootImage(size, size);
+        int center = size / 2;
         
-        // --- LEVEL 4: NANO-HEX SHIELD ---
-        if (level >= 4) {
-            img.setColor(new Color(0, 255, 255, 40));
-            // Draw a faint hexagonal grid over the chassis
-            for(int i=0; i<3; i++) {
-                img.drawRect(c-15 + i*10, c-15, 5, 30);
-                img.drawRect(c-15, c-15 + i*10, 30, 5);
+        // LEVITATION: Jesus-style bobbing (Exaggerated)
+        float bobFreq = isRaged ? 5.0f : 2.5f;
+        int bob = (int)(Math.sin(Math.toRadians(orbitAngle * bobFreq)) * 7);
+        
+        // THEME: Neon Green identity
+        Color theme = new Color(0, 255, 100); 
+        if (level == 5) theme = new Color(150, 255, 150); // Divine White-Green
+        if (isRaged) theme = Color.RED;
+    
+        switch(level) {
+            case 1: // THE SEED
+                img.setColor(new Color(20, 60, 20));
+                img.fillRect(center-15, center-15+bob, 30, 30);
+                img.setColor(theme);
+                img.drawRect(center-15, center-15+bob, 29, 29);
+                img.fillOval(center-3, center-3+bob, 6, 6);
+                break;
+    
+            case 2: // THE REINFORCED
+                img.setColor(new Color(40, 40, 40));
+                img.fillRect(center-18, center-18+bob, 36, 36);
+                img.setColor(theme);
+                img.drawRect(center-18, center-18+bob, 35, 35);
+                img.fillRect(center-24, center-4+bob, 6, 8);
+                img.fillRect(center+18, center-4+bob, 6, 8);
+                img.fillOval(center-4, center-4+bob, 8, 8);
+                break;
+    
+            case 3: // THE DUAL-HEALIX SWARM (Exaggerated)
+                // Core: Pulsing Triangle
+                drawPolygon(img, center, center+bob, 12, 3, orbitAngle, theme);
+                
+                for (int i = 0; i < stackCount; i++) {
+                    double baseA = i * (360.0 / stackCount);
+                    
+                    // Orbit 1: Fast, Elliptical (Horizontal)
+                    double a1 = Math.toRadians(orbitAngle * 2.5 + baseA);
+                    int x1 = (int)(center + Math.cos(a1) * 30);
+                    int y1 = (int)(center + Math.sin(a1) * 15) + bob; // Flattened Y
+                    
+                    // Orbit 2: Slower, Elliptical (Vertical)
+                    double a2 = Math.toRadians(-orbitAngle * 1.5 + baseA + 180);
+                    int x2 = (int)(center + Math.cos(a2) * 15);
+                    int y2 = (int)(center + Math.sin(a2) * 35) + bob; // Flattened X
+    
+                    img.setColor(theme);
+                    img.fillRect(x1-2, y1-2, 5, 5);
+                    img.fillRect(x2-2, y2-2, 5, 5);
+                    
+                    // Energy Web: Connect drones in the same orbit
+                    img.setColor(new Color(theme.getRed(), theme.getGreen(), theme.getBlue(), 60));
+                    img.drawLine(x1, y1, x2, y2);
+                }
+                break;
+    
+            case 4: // THE GEOMETRIC MATRIX (Lissajous Orbits)
+            // 1. THE CORE: Rotating Wireframe Hexagon
+            //img.setStroke(new java.awt.BasicStroke(2.0f));
+            drawWireframeShape(img, center, center+bob, 18, 6, orbitAngle * 0.5f, theme);
+            
+            // 2. THE LATTICE: Drones move in harmonic "Knot" patterns
+            for (int i = 0; i < stackCount; i++) {
+                double baseA = i * (Math.PI * 2 / stackCount);
+                double t = Math.toRadians(orbitAngle) + baseA;
+
+                // Orbit A: Lissajous Knot (Ratio 3:2) - The "Horizontal Infinity"
+                int x1 = (int)(center + Math.sin(3 * t) * 35);
+                int y1 = (int)(center + Math.cos(2 * t) * 20) + bob;
+
+                // Orbit B: Lissajous Knot (Ratio 1:3) - The "Vertical Clover"
+                int x2 = (int)(center + Math.sin(1 * t) * 15);
+                int y2 = (int)(center + Math.cos(3 * t) * 35) + bob;
+
+                // Draw Drones (Solid Rectangles)
+                img.setColor(theme);
+                img.fillRect(x1-2, y1-2, 5, 5);
+                img.fillRect(x2-2, y2-2, 5, 5);
+
+                // 3. THE CAGE: Connect drones with thin geometric "data lines"
+                // Only connect every 2nd frame for a "digital flicker" look
+                if (orbitAngle % 2 == 0) {
+                    img.setColor(new Color(theme.getRed(), theme.getGreen(), theme.getBlue(), 70));
+                    img.drawLine(x1, y1, x2, y2); // Cross-link the orbits
+                    img.drawLine(center, center+bob, x1, y1); // Link to core
+                }
             }
+            break;
+    
+            case 5: // THE ULTIMATE: Divine Mandala / Nano-Fortress
+                // 1. Radiant Aura
+                int pulse = 30 + (int)(Math.sin(Math.toRadians(orbitAngle * 3)) * 10);
+                img.setColor(new Color(255, 255, 255, 40));
+                img.fillOval(center-pulse/2, center-pulse/2+bob, pulse, pulse);
+                
+                // 2. The Divine Core (Diamond)
+                img.setColor(Color.WHITE);
+                int[] dxs = {center, center+12, center, center-12};
+                int[] dys = {center-12+bob, center+bob, center+12+bob, center+bob};
+                img.fillPolygon(dxs, dys, 4);
+                
+                // 3. The Great Halo (Outer rotating runic ring)
+                img.setColor(theme);
+                img.drawOval(center-28, center-28+bob, 56, 56);
+                for(int j=0; j<8; j++) {
+                    double a = Math.toRadians(-orbitAngle * 0.5 + (j*45));
+                    int rx = (int)(center + Math.cos(a) * 28);
+                    int ry = (int)(center + Math.sin(a) * 28) + bob;
+                    img.fillOval(rx-3, ry-3, 6, 6);
+                }
+                
+                // 4. The Stack Drones (Inner High-Speed Swarm)
+                for (int i = 0; i < stackCount; i++) {
+                    double angle = Math.toRadians(orbitAngle * 2 + (i * (360.0 / stackCount)));
+                    int x = (int)(center + Math.cos(angle) * 18);
+                    int y = (int)(center + Math.sin(angle) * 18) + bob;
+                    img.setColor(Color.WHITE);
+                    img.fillRect(x-2, y-2, 4, 4);
+                }
+                break;
         }
     
         setImage(img);
         setNormalImage(img);
     }
-    
+
+    /** Helper to draw rotating shapes for cores */
+    private void drawPolygon(GreenfootImage img, int x, int y, int radius, int sides, float rotation, Color color) {
+        int[] px = new int[sides];
+        int[] py = new int[sides];
+        for (int i = 0; i < sides; i++) {
+            double angle = Math.toRadians(rotation + (i * (360.0 / sides)));
+            px[i] = x + (int)(Math.cos(angle) * radius);
+            py[i] = y + (int)(Math.sin(angle) * radius);
+        }
+        img.setColor(color);
+        img.fillPolygon(px, py, sides);
+    }
+
     @Override
     protected void attack(Enemy dummyTarget) {
-        // 1. Always fire at the primary lane
         Enemy center = findTargetInLane(laneIndex);
         if (center != null) fireAt(center);
-    
-        // 2. Fire at adjacent lanes if Level 2+
         if (level >= GameConfig.BASIC_SWARM_UNLOCK) {
             Enemy top = findTargetInLane(laneIndex - 1);
             if (top != null) fireAt(top);
-            
             Enemy bottom = findTargetInLane(laneIndex + 1);
             if (bottom != null) fireAt(bottom);
         }
@@ -167,79 +243,52 @@ public class BasicUnit extends Unit {
         getWorld().addObject(new Projectile(target, totalDamage, null), getX(), getY());
     }
 
-        // Rename this to match the one I used in findTarget or update it:
     private Enemy findTargetInLane(int laneToCheck) {
         if (laneToCheck < 0 || laneToCheck >= GameConfig.NUM_LANES) return null;
-        
         Enemy furthest = null;
         int furthestX = Integer.MAX_VALUE;
-        
-        // Scan all enemies to find the one closest to the base in THIS specific lane
         for (Enemy e : getWorld().getObjects(Enemy.class)) {
-            if (e.getLaneIndex() == laneToCheck && !e.isDead()) {
-                if (e.getX() < furthestX) {
-                    furthest = e;
-                    furthestX = e.getX();
-                }
+            if (e.getLaneIndex() == laneToCheck && !e.isDead() && e.getX() < furthestX) {
+                furthest = e; furthestX = e.getX();
             }
         }
         return furthest;
     }
-    /** 
-     * Overriding findTarget so the Basic Unit "wakes up" if an enemy 
-     * is in ANY of its valid lanes (Own, Top, or Bottom).
-     */
+
     @Override
     protected Enemy findTarget() {
-        // If Level 1, only look at our own lane (standard behavior)
-        if (level < GameConfig.BASIC_SWARM_UNLOCK) {
-            return super.findTarget();
-        }
-    
-        // If Level 2+, we scan all 3 lanes to see if we should start firing
+        if (level < GameConfig.BASIC_SWARM_UNLOCK) return super.findTarget();
         Enemy bestTarget = null;
         int closestX = Integer.MAX_VALUE;
-    
-        // Scan Lane-1, Lane, and Lane+1
         for (int offset = -1; offset <= 1; offset++) { 
             int checkLane = laneIndex + offset;
-            
-            // Safety check to stay inside world lanes (0-4)
             if (checkLane >= 0 && checkLane < GameConfig.NUM_LANES) {
                 Enemy e = findTargetInLane(checkLane);
                 if (e != null && e.getX() < closestX) {
-                    closestX = e.getX();
-                    bestTarget = e;
+                    closestX = e.getX(); bestTarget = e;
                 }
             }
         }
-        
-        // If this returns an enemy, updateBehavior will trigger the attack() method
         return bestTarget; 
     }
-    
-    private void drawCoolDrone(GreenfootImage img, int x, int y) {
-        // Drone is a "Diamond" shape with a white wing
-        img.setColor(new Color(50, 50, 60));
-        int[] px = {x, x+8, x, x-8};
-        int[] py = {y-5, y, y+5, y};
-        img.fillPolygon(px, py, 4);
-        
-        img.setColor(Color.CYAN);
-        img.drawPolygon(px, py, 4);
-        
-        // Tiny engine flare
-        img.setColor(Color.WHITE);
-        img.fillRect(x-2, y-2, 4, 4);
+    /** Helper to draw a non-filled geometric wireframe */
+    private void drawWireframeShape(GreenfootImage img, int x, int y, int radius, int sides, float rotation, Color color) {
+        int[] px = new int[sides];
+        int[] py = new int[sides];
+        for (int i = 0; i < sides; i++) {
+            double angle = Math.toRadians(rotation + (i * (360.0 / sides)));
+            px[i] = x + (int)(Math.cos(angle) * radius);
+            py[i] = y + (int)(Math.sin(angle) * radius);
+        }
+        img.setColor(color);
+        img.drawPolygon(px, py, sides);
+        // Draw internal lines to the center to make it look 3D
+        for (int i = 0; i < sides; i++) {
+            img.drawLine(x, y, px[i], py[i]);
+        }
     }
-
+    
     public int getStackCount() { return stackCount; }
-    
     @Override protected int getBaseHPFromConfig() { return GameConfig.BASIC_UNIT_HP; }
-    
-    @Override
-    public boolean isSelfRaged() {
-        return isRaged;
-    }
-    
+    @Override public boolean isSelfRaged() { return isRaged; }
 }
