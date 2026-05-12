@@ -21,7 +21,9 @@ public class Nuke extends Actor {
             
             // Annihilate everything
             for (Enemy e : world.getObjects(Enemy.class)) {
-                e.takeDamage(99999, true); // 99k True Damage!
+                if (e != null && !e.isDead()) {
+                    e.die(); 
+                }
             }
         }
 
