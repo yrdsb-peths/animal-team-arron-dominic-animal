@@ -131,6 +131,9 @@ public abstract class Unit extends Actor {
     protected abstract void attack(Enemy target);
 
     public void takeDamage(int amount, Enemy attacker) {
+        // If buffed by Commander, take 30% LESS damage!
+        if (hasCommanderBuff()) amount = (int)(amount * 0.7); 
+        
         health -= amount;
         
         if (normalImage == null) normalImage = new GreenfootImage(getImage());
@@ -199,5 +202,26 @@ public abstract class Unit extends Actor {
     public int getLevel() {
         return this.level;
     }
+    
+    // --- COMMANDER DOMAIN BUFF SYSTEM ---
+    private int buffFrames = 0;
+    
+    public void applyCommanderBuff() { 
+        buffFrames = 2; // Stays active as long as the Domain is touching them
+    }
+    
+    public boolean hasCommanderBuff() { 
+        return buffFrames > 0; 
+    }
+    
+    /** Use this inside your attack() methods to boost damage! */
+    protected int getFinalDamage(int baseDamage) {
+        if (hasCommanderBuff()) return (int)(baseDamage * 1.3); // +30% Damage Buff
+        return baseDamage;
+    }
+
+    // UPDATE act() to decrement the buff
+    // (Inside your act() method, right under `if (isDead) return;`, add this:)
+    // if (buffFrames > 0) buffFrames--;
     
 }

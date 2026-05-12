@@ -6,7 +6,7 @@ public class GameConfig {
     public static final boolean DEBUG_MODE = true; // Set to false for final build
       
     //Economy Config
-    public static final int STARTING_GOLD = 200000;
+    public static final int STARTING_GOLD = 2000;
     
     // ── CALAMITY MASTER SETTINGS ────────────────────────────────────────
     public static final int CALAMITY_INTERVAL = 5;      // Happens every 5 waves
@@ -134,34 +134,44 @@ public class GameConfig {
     public static final double COWARD_UNIT_COOLDOWN = 1.0; 
     public static final int COWARD_UNIT_DAMAGE = 50;
     public static final int COWARD_SCARE_RANGE = s(50); // Distance before it hides
-    
     // ========================================================================
     // ── UNIT ABILITY UNLOCKS & STATS ────────────────────────────────────────
     // ========================================================================
     
-    // BASIC UNIT (Swarm Attack)
-    public static final int BASIC_SWARM_UNLOCK       = 2; // Fires at adjacent lanes
+    // --- BASIC UNIT ---
+    public static final int BASIC_SWARM_UNLOCK         = 2;    // Fires at adjacent lanes
+    public static final int BASIC_RAGE_UNLOCK          = 3;    // +50% Fire Rate when enemies are close
+    public static final int BASIC_DOMAIN_UNLOCK        = 5;    // Commander Domain (Buffs nearby units)
     
-    // SNIPER UNIT (Frostbite / Weakness)
-    public static final int SNIPER_DEBUFF_UNLOCK     = 2; // Enemies deal less damage
-    public static final float SNIPER_FREEZE_WEAKNESS = 0.5f; // Deals 50% damage while frozen
-
-    // RAILGUN UNIT (Heat Trail)
-    public static final int RAILGUN_TRAIL_UNLOCK     = 2; // Leaves a burning line
-    public static final int RAILGUN_TRAIL_DAMAGE     = 25; // Damage per half-second
-
-    // ALCHEMIST UNIT (Corrosive Gas)
-    public static final int ALCHEMIST_CORROSIVE_UNLOCK = 2; // Puddles melt armor
+    // --- ALCHEMIST UNIT ---
+    public static final int ALCHEMIST_CORROSIVE_UNLOCK = 2;    // Puddles melt armor
+    public static final int ALCHEMIST_STICKY_UNLOCK    = 3;    // Puddles Slow enemies 50%
+    public static final int ALCHEMIST_CONTAGION_UNLOCK = 4;    // Dead enemies spawn puddles
     public static final float ALCHEMIST_DMG_AMP        = 1.5f; // Take 50% more damage
-
-    // WALL UNITS (Thorns)
-    public static final int WALL_THORNS_UNLOCK       = 2; 
-    public static final float WALL_THORN_MULTIPLIER  = 1.0f; // Reflect 100% of damage
-    public static final int WALL_THORN_BASE_DMG      = 20;   // Minimum damage dealt back
-
-    // COWARD UNIT (Parting Gift)
-    public static final int COWARD_GIFT_UNLOCK       = 2; // Fires burst before hiding
     
+    // --- SNIPER UNIT ---
+    public static final int SNIPER_DEBUFF_UNLOCK       = 2;    // Enemies deal less damage
+    public static final float SNIPER_FREEZE_WEAKNESS   = 0.5f; // Deals 50% damage while frozen
+    
+    // --- RAILGUN UNIT ---
+    public static final int RAILGUN_TRAIL_UNLOCK       = 2;    // Leaves a burning line
+    public static final int RAILGUN_TRAIL_DAMAGE       = 25;   // Damage per half-second
+    
+    // --- WALL UNITS ---
+    public static final int WALL_THORNS_UNLOCK         = 2; 
+    public static final int WALL_HEAL_UNLOCK           = 4;    // Auto-heals 3% HP every second
+    public static final int WALL_EXPLODE_UNLOCK        = 5;    // Explodes on death
+    public static final float WALL_THORN_MULTIPLIER    = 1.0f; // Reflect 100% of damage
+    public static final int WALL_THORN_BASE_DMG        = 20;   // Minimum damage dealt back
+    
+    // --- BIG WALL UNITS ---
+    public static final int BIG_WALL_EXPLODE_UNLOCK    = 4;    // Explodes on death
+    public static final int BIG_WALL_IMMUNE_UNLOCK     = 5;    // Immune to Calamities
+    
+    // --- COWARD UNIT ---
+    public static final int COWARD_GIFT_UNLOCK         = 2;    // Fires burst before hiding
+    
+        
     // ========================================================================
     // ── THE DIFFICULTY ENGINE (EASY BALANCING KNOBS) ────────────────────────
     // ========================================================================
@@ -181,13 +191,13 @@ public class GameConfig {
     // Upgrade Cost = Base * UPGRADE_BASE_MULT * (UPGRADE_EXP_MULT ^ (Level - 1))
     // Example Sniper ($100): L2=$1,000 | L3=$3,000 | L4=$9,000 | L5=$27,000
     public static final float UPGRADE_COST_BASE_MULT = 10f; 
-    public static final float UPGRADE_COST_EXP_MULT  = 4.0f; 
+    public static final float UPGRADE_COST_EXP_MULT  = 5.0f; 
 
     // --- 3. ENEMY THREAT (The Relentless Creep) ---
     // Instead of decimals, we use easy-to-read percentages.
     // +12% HP per wave means enemies double their HP every ~6 waves.
-    public static final double ENEMY_HP_GROWTH_PCT   = 12.0; // 12% increase per wave
-    public static final double ENEMY_DMG_GROWTH_PCT  = 12.0;  // 12% increase per wave
+    public static final double ENEMY_HP_GROWTH_PCT   = 150.0; // 150% increase per wave
+    public static final double ENEMY_DMG_GROWTH_PCT  = 50.0;  // 50% increase per wave
     public static final double ENEMY_DROP_GROWTH_PCT = 20.0; // 20% more gold dropped per wave
 
     // ========================================================================
@@ -358,8 +368,8 @@ public class GameConfig {
     public static final int DROP_MICROSLIME = 5;
     public static final int DROP_HEAVY_SHIELD = 200; 
 
-    // How much extra gold enemies drop per wave (0.10 = +10% per wave)
-    public static final float DROP_GROWTH_PER_WAVE = 0.10f;
+    // How much extra gold enemies drop per wave (0.05 = +5% per wave)
+    public static final float DROP_GROWTH_PER_WAVE = 0.05f;
     
     
 

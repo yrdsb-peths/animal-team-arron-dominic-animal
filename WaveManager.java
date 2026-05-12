@@ -352,18 +352,17 @@ public class WaveManager {
             
             // --- NEW: COMPOUNDING ENEMY SCALING ---
             // Formula: (1 + Percentage/100) ^ WaveNum
-            double hpGrowthRate = GameConfig.ENEMY_HP_GROWTH_PCT / 100.0;
-            double dmgGrowthRate = GameConfig.ENEMY_DMG_GROWTH_PCT / 100.0;
+            // Change Linear Scaling to Exponential Scaling
+            // --- THE BALANCED LINEAR FORMULA ---
+            double hpRate = GameConfig.ENEMY_HP_GROWTH_PCT / 100.0;
+            double dmgRate = GameConfig.ENEMY_DMG_GROWTH_PCT / 100.0;
             
-            double hpMult, dmgMult;
+            // Enemy HP = 100 + (100 * 1.5 * Wave)
+            double hpMult = 1.0 + (hpRate * waveNum);
+            double dmgMult = 1.0 + (dmgRate * waveNum);
             
             if (type == SLIME) {
-                // Bug 3 Fixed: Uses the Config variables, and applies them Linearly!
-                hpMult = 1.0 + ((hpGrowthRate + GameConfig.SLIME_BONUS_HP_GROWTH) * waveNum);
-                dmgMult = 1.0 + ((dmgGrowthRate + GameConfig.SLIME_BONUS_DMG_GROWTH) * waveNum);
-            } else {
-                hpMult = 1.0 + (hpGrowthRate * waveNum);
-                dmgMult = 1.0 + (dmgGrowthRate * waveNum);
+                hpMult = 1.0 + ((hpRate + 1.0) * waveNum); // Slimes scale even faster
             }
             
             e.scaleStats((float)hpMult, (float)dmgMult, waveNum);
