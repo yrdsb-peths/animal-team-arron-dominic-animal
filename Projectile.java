@@ -5,6 +5,7 @@ public class Projectile extends Actor {
     private Enemy target;
     private int damage;
     private int speed = GameConfig.s(8);
+    private int level; 
     
     private StatusEffect payload;
 
@@ -35,7 +36,6 @@ public class Projectile extends Actor {
         MyWorld world = (MyWorld) getWorld();
         if (world == null || !world.getGSM().isState(PlayingState.class)) return;
 
-        // If target died before we reached it, destroy the projectile
         if (target == null || target.getWorld() == null || target.isDead()) {
             world.removeObject(this);
             return;
@@ -44,26 +44,34 @@ public class Projectile extends Actor {
         turnTowards(target.getX(), target.getY());
         move(speed * GameConfig.GAME_SPEED);
 
-        // Inside Projectile.act()
         if (intersects(target)) {
+            // --- THE NO-TOUCH LEVEL LOOKUP ---
             boolean isSniperShot = (payload instanceof SlowEffect);
-            if (isSniperShot && target.health <= damage && GameConfig.DEBUG_MODE) { // Use your level check here
+            
+            if (isSniperShot) {
+                // Look up the Sniper's current global tech level (ID 2 is Sniper)
+                this.level = UnitRegistry.getById(2).level;
+            } else {
+                // Look up Basic Unit level (ID 1)
+                this.level = UnitRegistry.getById(1).level;
+            }
+
+            // NOW THE GUARD WORKS!
+            if (isSniperShot && target.health <= damage && level >= GameConfig.SNIPER_ICE_KILL_UNLOCK) {
                  target.markForIceKill();
             }
+
             // 1. Determine if this specific hit ignores shields
-            // Check A: Is it a backstab?
             boolean backstabHit = (getX() > target.getX());
-            
-            // Check B: Does the config say this unit type ignores shields?
-            boolean configBypasses = (payload instanceof SlowEffect) ? 
+            boolean configBypasses = (isSniperShot) ? 
                                      GameConfig.SNIPER_PROJECTILE_BYPASS : 
                                      GameConfig.BASIC_PROJECTILE_BYPASS;
     
-            // Combine logic: Bypass if (it's a backstab AND config allows it) OR (unit type bypasses)
             boolean finalBypass = (backstabHit && GameConfig.BACKSTAB_ALWAYS_BYPASS) || configBypasses;
     
             // 2. APPLY DAMAGE
             target.takeDamage(damage, finalBypass);
+
     
             // 3. APPLY EFFECTS (Swarm Slow vs. Single Effect)
             if (payload instanceof SlowEffect) {

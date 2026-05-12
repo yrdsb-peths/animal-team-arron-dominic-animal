@@ -358,8 +358,8 @@ public class WaveManager {
             double dmgRate = GameConfig.ENEMY_DMG_GROWTH_PCT / 100.0;
             
             // Enemy HP = 100 + (100 * 1.5 * Wave)
-            double hpMult = 1.0 + (hpRate * waveNum);
-            double dmgMult = 1.0 + (dmgRate * waveNum);
+            double hpMult = 5.0 + (hpRate * waveNum);
+            double dmgMult = 5.0 + (dmgRate * waveNum);
             
             if (type == SLIME) {
                 hpMult = 1.0 + ((hpRate + 1.0) * waveNum); // Slimes scale even faster
