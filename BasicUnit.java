@@ -11,6 +11,8 @@ public class BasicUnit extends Unit {
     private DomainExpansion myDomain = null; // Track our domain!
     private GameTimer domainRestTimer = new GameTimer(7.0, false); 
     private boolean domainIsReady = true;
+    private int droneRotation = 0; // Animates the Lvl 2 Drones
+    private double animTimer = 0;
 
     public BasicUnit(int laneIndex, int colIndex) {
         super(GameConfig.BASIC_UNIT_HP, laneIndex, colIndex, GameConfig.BASIC_UNIT_COOLDOWN);
@@ -99,44 +101,48 @@ public class BasicUnit extends Unit {
 
     @Override
     public void updateVisual() {
+        // Get the core chassis we designed above
         GreenfootImage img = UnitVisuals.draw(1, level, Color.GREEN);
-        int size = img.getWidth();
+        int c = img.getWidth() / 2;
+        int b = GameConfig.UNIT_SIZE / 2;
+        animTimer += 0.1;
+    
+        // --- LEVEL 2: ORBITAL DEFENSE DRONES ---
+        if (level >= 2) {
+            // We move the drones in a wide figure-eight outside the unit
+            int dx = (int)(Math.sin(animTimer) * 35);
+            int dy = (int)(Math.cos(animTimer * 0.5) * 15);
+            
+            drawCoolDrone(img, c + dx, c + dy - 25); // Top Drone
+            drawCoolDrone(img, c - dx, c - dy + 25); // Bottom Drone
+        }
+    
+        // --- LEVEL 3: RAGE OVERLOAD ---
+        if (isRaged) {
+            // Pulse a red "Warning" ring around the unit
+            int pulse = (int)(Math.abs(Math.sin(animTimer * 2)) * 20);
+            img.setColor(new Color(255, 0, 0, 150 - pulse * 5));
+            img.drawOval(c - b - pulse, c - b - pulse, (b*2) + pulse*2, (b*2) + pulse*2);
+            
+            // Red Hot Core
+            img.setColor(new Color(255, 50, 50));
+            img.fillOval(c-6, c-6, 12, 12);
+        }
         
-        // --- DRAW THE SWARM DOTS ---
-        int displayCount = Math.max(1, stackCount);
-        int gridSide = (int)Math.ceil(Math.sqrt(displayCount));
-        int dotSize = Math.max(2, (size / gridSide) - 2); 
-        int offset = (size - (gridSide * (dotSize + 1))) / 2; 
-
-        img.setColor(Color.GREEN);
-        if (level == 5) img.setColor(Color.WHITE); 
-
-        int drawn = 0;
-        for (int row = 0; row < gridSide; row++) {
-            for (int col = 0; col < gridSide; col++) {
-                if (drawn >= stackCount) break;
-                img.fillRect(offset + col * (dotSize + 1), offset + row * (dotSize + 1), dotSize, dotSize);
-                drawn++;
+        // --- LEVEL 4: NANO-HEX SHIELD ---
+        if (level >= 4) {
+            img.setColor(new Color(0, 255, 255, 40));
+            // Draw a faint hexagonal grid over the chassis
+            for(int i=0; i<3; i++) {
+                img.drawRect(c-15 + i*10, c-15, 5, 30);
+                img.drawRect(c-15, c-15 + i*10, 30, 5);
             }
         }
-
-        // --- RAGE VISUAL OVERLAY ---
-        if (isRaged) {
-            // 1. Crimson wash over the whole unit
-            img.setColor(new Color(255, 0, 0, 80)); 
-            img.fillRect(0, 0, size, size);
-            
-            // 2. Angry thick glowing red border
-            img.setColor(Color.RED);
-            img.drawRect(0, 0, size-1, size-1);
-            img.drawRect(1, 1, size-3, size-3);
-            img.drawRect(2, 2, size-5, size-5);
-        }
-        
+    
         setImage(img);
         setNormalImage(img);
     }
-
+    
     @Override
     protected void attack(Enemy dummyTarget) {
         // 1. Always fire at the primary lane
@@ -212,6 +218,21 @@ public class BasicUnit extends Unit {
         return bestTarget; 
     }
     
+    private void drawCoolDrone(GreenfootImage img, int x, int y) {
+        // Drone is a "Diamond" shape with a white wing
+        img.setColor(new Color(50, 50, 60));
+        int[] px = {x, x+8, x, x-8};
+        int[] py = {y-5, y, y+5, y};
+        img.fillPolygon(px, py, 4);
+        
+        img.setColor(Color.CYAN);
+        img.drawPolygon(px, py, 4);
+        
+        // Tiny engine flare
+        img.setColor(Color.WHITE);
+        img.fillRect(x-2, y-2, 4, 4);
+    }
+
     public int getStackCount() { return stackCount; }
     
     @Override protected int getBaseHPFromConfig() { return GameConfig.BASIC_UNIT_HP; }
@@ -220,4 +241,5 @@ public class BasicUnit extends Unit {
     public boolean isSelfRaged() {
         return isRaged;
     }
+    
 }

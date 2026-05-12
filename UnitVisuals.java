@@ -12,19 +12,51 @@ public class UnitVisuals {
         img.setColor(baseColor);
 
         switch(unitID) {
-            case 1: // BASIC UNIT (Draws the "Frame" for the squad)
-                if (level >= 2) {
-                    img.setColor(new Color(40, 40, 40)); // Dark base
-                    img.fillRect(0, 0, size, size);
-                    img.setColor(lvlAccent);
-                    img.drawRect(0, 0, size-1, size-1);
-                }
-                if (level >= 4) {
-                    // Corner reinforcements
-                    img.fillRect(0, 0, 8, 8); img.fillRect(size-8, 0, 8, 8);
-                    img.fillRect(0, size-8, 8, 8); img.fillRect(size-8, size-8, 8, 8);
-                }
-                break;
+            case 1: // BASIC UNIT: THE TECHNO-HIVE
+        int canvasSize = size + 20; // Give room for external parts
+        img = new GreenfootImage(canvasSize, canvasSize);
+        int c = canvasSize / 2;
+        int b = size / 2; // Half-size of the actual unit body
+
+        // --- LAYER 1: THE CHASSIS (Dark Metal Frame) ---
+        img.setColor(new Color(20, 20, 25));
+        img.fillPolygon(new int[]{c-b, c+b, c+b+5, c-b-5}, 
+                        new int[]{c-b, c-b, c+b, c+b}, 4); // Beveled plate
+        
+        // --- LEVEL 4: OVER-ARMOR PLATING ---
+        if (level >= 4) {
+            img.setColor(new Color(40, 45, 50));
+            // Heavy side-guards
+            img.fillRect(c-b-8, c-15, 6, 30);
+            img.fillRect(c+b+2, c-15, 6, 30);
+            img.setColor(lvlAccent);
+            img.drawRect(c-b-8, c-15, 6, 30);
+            img.drawRect(c+b+2, c-15, 6, 30);
+        }
+
+        // --- LAYER 2: NEON ACCENTS ---
+        img.setColor(lvlAccent);
+        img.drawRect(c-b, c-b, size, size); // Main border
+        
+        // --- LEVEL 3: ENERGY VENTS ---
+        if (level >= 3) {
+            img.setColor(new Color(lvlAccent.getRed(), lvlAccent.getGreen(), lvlAccent.getBlue(), 120));
+            // Draw four corner "Engine Glows"
+            img.fillOval(c-b-4, c-b-4, 8, 8);
+            img.fillOval(c+b-4, c-b-4, 8, 8);
+            img.fillOval(c-b-4, c+b-4, 8, 8);
+            img.fillOval(c+b-4, c+b-4, 8, 8);
+        }
+
+        // --- LAYER 3: THE CORE (The "Eye") ---
+        img.setColor(new Color(0, 0, 0));
+        img.fillOval(c-10, c-10, 20, 20);
+        img.setColor(level >= 4 ? Color.CYAN : Color.GREEN);
+        img.fillOval(c-6, c-6, 12, 12); // Glowing center
+        img.setColor(Color.WHITE);
+        img.fillOval(c-2, c-4, 4, 4); // Reflective "Glance"
+        
+        break;
 
             case 2: // SNIPER (Diamond evolution)
                 int[] px = {center, size, center, 0};

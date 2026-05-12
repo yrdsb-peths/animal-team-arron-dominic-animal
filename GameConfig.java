@@ -8,7 +8,7 @@ public class GameConfig {
     public static final String DEBUG_KEY_WAVE_SKIP_1  = "[";
     public static final String DEBUG_KEY_WAVE_SKIP_10 = "]";
     //Economy Config
-    public static final int STARTING_GOLD = 5000;
+    public static final int STARTING_GOLD = DEBUG_MODE ? 1000000000 : 5000;
     
     // ── CALAMITY MASTER SETTINGS ────────────────────────────────────────
     public static final int CALAMITY_INTERVAL = 5;      // Happens every 5 waves
@@ -159,7 +159,7 @@ public class GameConfig {
 
     // SNIPER: L2 Debuff, L3 Enhanced Slow, L5 Ice Statue
     public static final int SNIPER_DEBUFF_UNLOCK    = 2;
-    public static final int SNIPER_ICE_KILL_UNLOCK  = 5; // Moved from 4 to 5
+    public static final int SNIPER_ICE_KILL_UNLOCK  = 3; 
 
     // ALCHEMIST: L2 Corrosive, L3 Sticky, L5 Contagion
     public static final int ALCHEMIST_CORROSIVE_UNLOCK = 2;
