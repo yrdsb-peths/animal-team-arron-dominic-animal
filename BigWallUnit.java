@@ -142,9 +142,9 @@ public class BigWallUnit extends WallUnit {
     
     @Override
     protected void updateBehavior(MyWorld world) {
-        super.updateBehavior(world);
+        //super.updateBehavior(world);
         
-        // LEVEL 4: AUTO-HEAL
+        /* LEVEL 4: AUTO-HEAL
         if (level >= GameConfig.WALL_HEAL_UNLOCK) {
             healTimer.update(world);
             if (healTimer.isExpired() && health < maxHealth) {
@@ -169,6 +169,7 @@ public class BigWallUnit extends WallUnit {
                 updateVisual(); 
             }
         }
+        */
     }
     
     

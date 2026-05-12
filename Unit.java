@@ -39,9 +39,16 @@ public abstract class Unit extends Actor {
         MyWorld world = (MyWorld) getWorld();
         if (world == null || !world.getGSM().isState(PlayingState.class)) return;
         
-        // ... existing hurt and death logic ...
+        //
         if (isDead) { handleDeath(world); return; }
     
+        if (hurtTimer.isActive()) {
+            hurtTimer.update(world);
+            if (hurtTimer.isExpired()) {
+                setImage(normalImage); // Returns to the clean stage image
+            }
+        }
+
         // 1. Tick down the Commander Buff
         if (buffFrames > 0) buffFrames--;
     
@@ -144,22 +151,32 @@ public abstract class Unit extends Actor {
     protected abstract void attack(Enemy target);
 
     public void takeDamage(int amount, Enemy attacker) {
-        // If buffed by Commander, take 30% LESS damage!
+        if (isDead) return;
+        
         if (hasCommanderBuff()) amount = (int)(amount * 0.7); 
-        
         health -= amount;
-        
-        if (normalImage == null) normalImage = new GreenfootImage(getImage());
-        if (hurtImage == null) {
-            hurtImage = new GreenfootImage(normalImage);
-            hurtImage.setColor(new Color(255, 0, 0, 100)); 
-            hurtImage.fill();
-        }
-        setImage(hurtImage);
-        hurtTimer.reset();
-        hurtTimer.start();
     
-        if (health <= 0) die();
+        // --- IMPROVED HIT FLASH ---
+        // We only trigger the flash if the unit is still alive
+        if (health > 0) {
+            // Create the flash image on the fly so it doesn't get stuck
+            GreenfootImage flash = new GreenfootImage(normalImage);
+            
+            // WALLS get a White/Grey flash (sparks), others get Red (blood)
+            if (this instanceof WallUnit) {
+                flash.setColor(new Color(255, 255, 255, 120)); // White impact
+            } else {
+                flash.setColor(new Color(255, 0, 0, 100)); // Red tint
+            }
+            
+            flash.fill();
+            setImage(flash);
+            
+            hurtTimer.reset();
+            hurtTimer.start();
+        } else {
+            die();
+        }
     }
     // Fallback for Acid Puddles and Earthquakes
     public void takeDamage(int amount) {
