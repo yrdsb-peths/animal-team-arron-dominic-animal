@@ -45,9 +45,6 @@ public class SlimeEnemy extends Enemy {
     }
 
     @Override
-    protected void performAttack(Unit target) { target.takeDamage(this.damage); }
-
-    @Override
     protected void handleDeath(MyWorld world) {
         CurrencyManager.earn(25);
         ScoreManager.addScore(100);

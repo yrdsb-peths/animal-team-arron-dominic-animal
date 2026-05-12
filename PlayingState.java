@@ -51,7 +51,7 @@ public class PlayingState implements GameState {
     
         // 5. TOP UI (Wave/Gold)
         waveDisplay = new UIText("WAVE: 1", GameConfig.s(22), Color.WHITE);
-        goldDisplay = new UIText("GOLD: " + CurrencyManager.getGold(), GameConfig.s(22), Color.YELLOW);
+        goldDisplay = new UIText("GOLD: " + GameConfig.formatNumber(CurrencyManager.getGold()), GameConfig.s(22), Color.YELLOW);
         world.addObject(waveDisplay, GameConfig.s(90), GameConfig.s(20));
         world.addObject(goldDisplay, GameConfig.s(300), GameConfig.s(20));
         uiElements.add(waveDisplay);

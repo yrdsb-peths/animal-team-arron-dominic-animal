@@ -114,9 +114,8 @@ public abstract class Enemy extends Actor {
     }
     
     /** 
-     * HOOK 2: How the enemy moves. You can override this for jumping/teleporting.
+     * How the enemy moves. You can override this for jumping/teleporting.
      */
-    
 
     protected void performMovement() {
         // Multiply by GAME_SPEED so they run faster
@@ -177,6 +176,14 @@ public abstract class Enemy extends Actor {
     public void die() {
         if (!isDead) {
             isDead = true;
+            MyWorld world = (MyWorld)getWorld();
+    
+            /// LEVEL 4: CONTAGION
+            if (this.damageTakenMultiplier > 1.0f) {
+                 // Pass '4' so the puddle inherits the Sticky/Corrosive traits!
+                 world.addObject(new DamagePuddle(4.0, 10, 4), getX(), getY());
+                 world.addObject(new FloatingText("CONTAGION", Color.GREEN, 15), getX(), getY());
+            }
             
             // 1. Calculate Wave Scaling (LINEAR FORMULA)
             double dropGrowthRate = GameConfig.ENEMY_DROP_GROWTH_PCT / 100.0;
@@ -193,7 +200,8 @@ public abstract class Enemy extends Actor {
             CurrencyManager.earn(finalDrop);
             ScoreManager.addScore(finalDrop * 2);
 
-            getWorld().addObject(new FloatingText("+$" + finalDrop, Color.YELLOW), getX(), getY());
+            String amountText = GameConfig.formatNumber(finalDrop);
+            getWorld().addObject(new FloatingText("+$" + amountText, Color.YELLOW), getX(), getY());
         }
     }
 

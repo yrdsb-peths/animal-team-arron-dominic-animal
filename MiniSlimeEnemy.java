@@ -12,9 +12,6 @@ public class MiniSlimeEnemy extends Enemy {
     }
 
     @Override
-    protected void performAttack(Unit target) { target.takeDamage(this.damage); }
-
-    @Override
     protected void handleDeath(MyWorld world) {
         CurrencyManager.earn(5); 
         ScoreManager.addScore(20);

@@ -50,6 +50,5 @@ public class ShieldBearerEnemy extends Enemy {
         setImage(img);
     }
 
-    @Override protected void performAttack(Unit target) { target.takeDamage(this.damage); }
     @Override protected void handleDeath(MyWorld world) { world.removeObject(this); }
 }

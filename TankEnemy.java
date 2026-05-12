@@ -20,12 +20,6 @@ public class TankEnemy extends Enemy {
     }
 
     @Override
-    protected void performAttack(Unit target) {
-        // Tanks hit harder than basic enemies
-        target.takeDamage(this.damage);
-    }
-
-    @Override
     protected void handleDeath(MyWorld world) {
         // Maybe tanks drop more gold?
         CurrencyManager.earn(25);

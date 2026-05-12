@@ -6,7 +6,7 @@ public class GameConfig {
     public static final boolean DEBUG_MODE = true; // Set to false for final build
       
     //Economy Config
-    public static final int STARTING_GOLD = 2000;
+    public static final int STARTING_GOLD = 20000000;
     
     // ── CALAMITY MASTER SETTINGS ────────────────────────────────────────
     public static final int CALAMITY_INTERVAL = 5;      // Happens every 5 waves
@@ -191,7 +191,8 @@ public class GameConfig {
     // Upgrade Cost = Base * UPGRADE_BASE_MULT * (UPGRADE_EXP_MULT ^ (Level - 1))
     // Example Sniper ($100): L2=$1,000 | L3=$3,000 | L4=$9,000 | L5=$27,000
     public static final float UPGRADE_COST_BASE_MULT = 10f; 
-    public static final float UPGRADE_COST_EXP_MULT  = 5.0f; 
+    public static final float UPGRADE_COST_EXP_MULT  = 9.6f; 
+    public static final int MAX_RESEARCH_COST = 2000000;
 
     // --- 3. ENEMY THREAT (The Relentless Creep) ---
     // Instead of decimals, we use easy-to-read percentages.
@@ -371,6 +372,15 @@ public class GameConfig {
     // How much extra gold enemies drop per wave (0.05 = +5% per wave)
     public static final float DROP_GROWTH_PER_WAVE = 0.05f;
     
-    
+    /** Converts 1500 to "1.5K", 1500000 to "1.5M", etc. */
+    public static String formatNumber(int value) {
+        if (value < 1000) return String.valueOf(value);
+        if (value < 1000000) {
+            double kValue = value / 1000.0;
+            return String.format("%.1fK", kValue);
+        }
+        double mValue = value / 1000000.0;
+        return String.format("%.1fM", mValue);
+    }
 
 }

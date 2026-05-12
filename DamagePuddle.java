@@ -66,6 +66,9 @@ public class DamagePuddle extends Actor {
                 if (level >= GameConfig.ALCHEMIST_CORROSIVE_UNLOCK) {
                     e.applyEffect(new CorrosiveEffect(1.0, GameConfig.ALCHEMIST_DMG_AMP));
                 }
+                if (level >= GameConfig.ALCHEMIST_STICKY_UNLOCK) {
+                    e.applyEffect(new SlowEffect(0.5, 0.5f, 1.0f)); // 50% slow
+                }
             }
         }
     }

@@ -15,12 +15,6 @@ public class BasicEnemy extends Enemy {
         getImage().fillOval(0, 0, 40, 40);
     }
 
-    // MANDATORY: Define how it attacks
-    @Override
-    protected void performAttack(Unit target) {
-        target.takeDamage(this.damage); // Just do normal damage
-    }
-
     @Override
     protected void handleDeath(MyWorld world) {
         world.removeObject(this);

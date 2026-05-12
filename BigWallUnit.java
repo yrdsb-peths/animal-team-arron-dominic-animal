@@ -139,32 +139,6 @@ public class BigWallUnit extends WallUnit {
         setNormalImage(img);
     }
     
-    @Override
-    public void takeDamage(int amount, Enemy attacker) {
-        super.takeDamage(amount, attacker);
-        
-        // THORNS MECHANIC (REWORKED)
-        if (level >= GameConfig.WALL_THORNS_UNLOCK && attacker != null) {
-            // Math: Base (20) * Level (2) + amount (1) = 41 damage.
-            // This is actually noticeable against a 200-400 HP enemy!
-            int retaliationDmg = (GameConfig.WALL_THORN_BASE_DMG * level) + 
-                                 (int)(amount * GameConfig.WALL_THORN_MULTIPLIER);
-            
-            attacker.takeDamage(retaliationDmg, true); 
-            
-            // VISUAL FEEDBACK: Make it pop!
-            // We use a specific color (Orange/Red) so it looks like a "Counter"
-            if (getWorld() != null) {
-                getWorld().addObject(new FloatingText("-" + retaliationDmg, Color.ORANGE, 15, 2, 25), 
-                                     attacker.getX(), attacker.getY());
-                
-                // Spawn some red sparks to show the "Prick"
-                for(int i=0; i<2; i++) {
-                    getWorld().addObject(new BlockSpark(Color.RED), getX(), getY());
-                }
-            }
-        }
-    }
     
     @Override protected int getBaseHPFromConfig() { return GameConfig.BIG_WALL_UNIT_HP; }
 }

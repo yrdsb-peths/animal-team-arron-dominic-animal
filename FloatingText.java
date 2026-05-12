@@ -12,6 +12,11 @@ public class FloatingText extends Actor {
         this.speed = floatSpeed;
         
         GreenfootImage img = new GreenfootImage(text, fontSize, color, new Color(0,0,0,0));
+        if (text.contains("M")) {
+            img.scale(img.getWidth() * 2, img.getHeight() * 2);
+            img.setColor(Color.WHITE); // White outline
+            img.drawRect(0, 0, img.getWidth() - 1, img.getHeight() - 1);
+        }
         setImage(img);
     }
 

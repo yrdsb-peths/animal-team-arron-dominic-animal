@@ -22,28 +22,27 @@ public class WallUnit extends Unit {
     
     @Override
     public void takeDamage(int amount, Enemy attacker) {
+        // 1. Apply the damage
         super.takeDamage(amount, attacker);
         
-        // THORNS MECHANIC (REWORKED)
-        if (level >= GameConfig.WALL_THORNS_UNLOCK && attacker != null) {
-            // Math: Base (20) * Level (2) + amount (1) = 41 damage.
-            // This is actually noticeable against a 200-400 HP enemy!
-            int retaliationDmg = (GameConfig.WALL_THORN_BASE_DMG * level) + 
-                                 (int)(amount * GameConfig.WALL_THORN_MULTIPLIER);
+        // 2. VISUAL CRUMBLING LOGIC
+        float hpPercent = (float)health / maxHealth;
+        int newStage = (hpPercent > 0.66f) ? 3 : (hpPercent > 0.33f) ? 2 : 1;
+
+        if (newStage != currentStage) {
+            currentStage = newStage;
+            updateVisual();
+        }
+        
+        // 3. THORN LOGIC
+        if (level >= GameConfig.WALL_THORNS_UNLOCK && attacker != null && !attacker.isDead()) {
+            MyWorld world = (MyWorld)getWorld();
+            int wave = world.getGSM().getWaveNumber();
+            int retaliationDmg = (GameConfig.WALL_THORN_BASE_DMG * level) + (wave * 10) + (int)(amount * GameConfig.WALL_THORN_MULTIPLIER);
             
             attacker.takeDamage(retaliationDmg, true); 
-            
-            // VISUAL FEEDBACK: Make it pop!
-            // We use a specific color (Orange/Red) so it looks like a "Counter"
-            if (getWorld() != null) {
-                getWorld().addObject(new FloatingText("-" + retaliationDmg, Color.ORANGE, 15, 2, 25), 
-                                     attacker.getX(), attacker.getY());
-                
-                // Spawn some red sparks to show the "Prick"
-                for(int i=0; i<2; i++) {
-                    getWorld().addObject(new BlockSpark(Color.RED), getX(), getY());
-                }
-            }
+            world.addObject(new FloatingText("-" + retaliationDmg, Color.ORANGE, 16, 2, 20), attacker.getX(), attacker.getY());
+            world.addObject(new BlockSpark(Color.RED), attacker.getX(), attacker.getY());
         }
     }
 
@@ -114,6 +113,40 @@ public class WallUnit extends Unit {
 
         setImage(img);
         setNormalImage(img);
+    }
+    private GameTimer healTimer = new GameTimer(1.0, true);
+
+    @Override
+    protected void updateBehavior(MyWorld world) {
+        super.updateBehavior(world);
+        
+        // LEVEL 4: AUTO-HEAL
+        if (level >= GameConfig.WALL_HEAL_UNLOCK) {
+            healTimer.update(world);
+            if (healTimer.isExpired() && health < maxHealth) {
+                int healAmt = (int)(maxHealth * 0.03); // 3% per second
+                health = Math.min(maxHealth, health + healAmt);
+                world.addObject(new HealEffect(), getX(), getY()); // NEW VISUAL
+                updateVisual(); // Show the wall rebuilding
+            }
+        }
+    }
+
+     @Override
+    public void die() {
+        if (isDead) return;
+        
+        // Let the system figure out which explosion to use!
+        if (this instanceof BigWallUnit) {
+            if (level >= GameConfig.BIG_WALL_EXPLODE_UNLOCK) {
+                getWorld().addObject(new Explosion(5000), getX(), getY());
+            }
+        } else {
+            if (level >= GameConfig.WALL_EXPLODE_UNLOCK) {
+                getWorld().addObject(new Explosion(2000), getX(), getY());
+            }
+        }
+        super.die();
     }
 
     @Override protected void attack(Enemy target) {}

@@ -1,14 +1,52 @@
 import greenfoot.*;
+import java.util.List;
 
 public class BasicUnit extends Unit {
     private int stackCount = 1;
+    private boolean isRaged = false;
+    private GameTimer domainTimer = new GameTimer(10.0, true); // Pulses every 10s
+    private GameTimer domainActiveTimer = new GameTimer(4.0, false); 
 
     public BasicUnit(int laneIndex, int colIndex) {
         super(GameConfig.BASIC_UNIT_HP, laneIndex, colIndex, GameConfig.BASIC_UNIT_COOLDOWN);
         this.stackCount = 1; 
         updateVisual();
     }
+    
+    @Override
+    protected void updateBehavior(MyWorld world) {
+        // 1. RADAR CHECK (1-unit radius = roughly 100 pixels)
+        List<Enemy> neighbors = getObjectsInRange(GameConfig.s(100), Enemy.class);
+        boolean enemyInPersonalSpace = !neighbors.isEmpty();
 
+        // 2. RAGE MODE (Level 3+)
+        if (level >= GameConfig.BASIC_RAGE_UNLOCK) {
+            if (enemyInPersonalSpace && !isRaged) {
+                isRaged = true;
+                world.addObject(new RageAura(this), getX(), getY()); 
+            } else if (!enemyInPersonalSpace && isRaged) {
+                isRaged = false;
+            }
+        }
+
+        // 3. COMMANDER DOMAIN (Level 5)
+        if (level >= GameConfig.BASIC_DOMAIN_UNLOCK) {
+            domainTimer.update(world);
+            if (domainTimer.isExpired() && enemyInPersonalSpace) {
+                domainActiveTimer.reset();
+                domainActiveTimer.start();
+                world.addObject(new DomainExpansion(GameConfig.s(120)), getX(), getY());
+            }
+            domainActiveTimer.update(world);
+        }
+
+        // 4. ATTACK SPEED LOGIC
+        // If Raged, we force-tick the cooldown an extra time (50% faster)
+        if (isRaged) attackCooldown.forceTick();
+        
+        super.updateBehavior(world);
+    }
+    
     public void addStack() {
         stackCount++;
         

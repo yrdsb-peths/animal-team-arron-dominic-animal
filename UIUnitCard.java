@@ -59,8 +59,8 @@ public class UIUnitCard extends Actor {
         UnitRegistry.UnitData data = UnitRegistry.getById(unitID);
         int scaledCost = (int)(price * Math.pow(GameConfig.PLACEMENT_COST_MULT, data.level - 1));
         int currentDisplayPrice = scaledCost * CalamityManager.getPriceMultiplier();
-        
-        img.drawString("$" + currentDisplayPrice, 5, size + 15);
+    
+        img.drawString("$" + GameConfig.formatNumber(currentDisplayPrice), 5, size + 15);
         
         // KEYBOARD SHORTCUT (Top Right) - RESTORED!
         img.setColor(isSelected ? Color.RED : Color.YELLOW);

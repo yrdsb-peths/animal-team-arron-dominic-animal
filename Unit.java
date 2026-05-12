@@ -50,6 +50,8 @@ public abstract class Unit extends Actor {
             return;
         }
         
+        if (buffFrames > 0) buffFrames--;
+        
         if (isDroughtAffected) {
             // Use the world reference directly instead of getObjects()
             if (world.getActCount() % 2 == 0) {
@@ -207,14 +209,14 @@ public abstract class Unit extends Actor {
     private int buffFrames = 0;
     
     public void applyCommanderBuff() { 
-        buffFrames = 2; // Stays active as long as the Domain is touching them
+        // 300 frames = 5 full seconds of +30% damage and 30% damage reduction!
+        buffFrames = 300; 
     }
     
     public boolean hasCommanderBuff() { 
         return buffFrames > 0; 
     }
     
-    /** Use this inside your attack() methods to boost damage! */
     protected int getFinalDamage(int baseDamage) {
         if (hasCommanderBuff()) return (int)(baseDamage * 1.3); // +30% Damage Buff
         return baseDamage;

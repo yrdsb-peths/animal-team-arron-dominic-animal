@@ -13,10 +13,21 @@ public class Projectile extends Actor {
         this.damage = damage;
         this.payload = payload;
         
-        GreenfootImage img = new GreenfootImage(15, 15);
-        img.setColor(Color.YELLOW);
-        img.fillOval(0, 0, 15, 15);
-        setImage(img);
+        if (payload instanceof SlowEffect) {
+            // ICE BULLET: Sharp frost crystal
+            GreenfootImage img = new GreenfootImage(25, 15);
+            img.setColor(new Color(100, 200, 255)); // Frost Blue
+            img.fillPolygon(new int[]{0, 15, 25, 15}, new int[]{7, 0, 7, 15}, 4);
+            img.setColor(Color.WHITE); // Inner Shine
+            img.drawPolygon(new int[]{0, 15, 25, 15}, new int[]{7, 0, 7, 15}, 4);
+            setImage(img);
+        } else {
+            // NORMAL BULLET
+            GreenfootImage img = new GreenfootImage(15, 15);
+            img.setColor(Color.YELLOW);
+            img.fillOval(0, 0, 15, 15);
+            setImage(img);
+        }
     }
 
     @Override

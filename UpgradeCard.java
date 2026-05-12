@@ -21,9 +21,14 @@ public class UpgradeCard extends Actor {
     }
    
     private int getUpgradeCost() {
-        // Formula: BaseCost * 10 * (3.0 ^ (Level-1))
+        // 1. Calculate the raw exponential cost as we did before
         double exponentialCurve = Math.pow(GameConfig.UPGRADE_COST_EXP_MULT, data.level - 1);
-        return (int)(data.cost * GameConfig.UPGRADE_COST_BASE_MULT * exponentialCurve);
+        long rawCost = (long)(data.cost * GameConfig.UPGRADE_COST_BASE_MULT * exponentialCurve);
+        
+        // 2. PIN IT DOWN: Use Math.min to ensure it never crosses the cap
+        int finalCost = (int)Math.min(rawCost, GameConfig.MAX_RESEARCH_COST);
+        
+        return finalCost;
     }
 
     private void applyGlobalUpgrade() {
@@ -64,7 +69,8 @@ public class UpgradeCard extends Actor {
         
         if (data.level < GameConfig.MAX_UNIT_LEVEL) {
             img.setColor(new Color(100, 255, 100));
-            img.drawString("Upgrade: $" + getUpgradeCost(), 15, h/2 + 65);
+            String priceText = GameConfig.formatNumber(getUpgradeCost());
+            img.drawString("Upgrade: $" + priceText, 15, h/2 + 65);
             
             // --- DEBUG MODE: SHOW NEXT LEVEL STATS ON THE CARD ---
             if (GameConfig.DEBUG_MODE) {
