@@ -194,8 +194,8 @@ public class GameConfig {
     // --- 1. PLAYER POWER SPIKES (The "Grace Period" Creators) ---
     public static final int MAX_UNIT_LEVEL = 5;
     // Base ^ (Level-1). 
-    public static final float LEVEL_HP_MULT       = 3.0f;  
-    public static final float LEVEL_DMG_MULT      = 3.5f;  
+    public static final float LEVEL_HP_MULT       = 2.5f;  
+    public static final float LEVEL_DMG_MULT      = 2.5f;  
     public static final float LEVEL_COOLDOWN_MULT = 0.85f; 
     public static final float LEVEL_VISUAL_SCALE  = 0.12f; 
     

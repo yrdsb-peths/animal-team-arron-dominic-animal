@@ -390,11 +390,121 @@ public class UnitVisuals {
         g2.dispose();
         return img;
     }
+    public static GreenfootImage drawAlchemist(int level, int ventTimer) {
+        int size = 60;
+        long time = System.currentTimeMillis();
+        GreenfootImage img = new GreenfootImage(size, size + 10);
+        java.awt.Graphics2D g2 = img.getAwtImage().createGraphics();
+        g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int center = size / 2;
+        // Animation: The unit "bloats" or jitters when venting
+        int jitter = (ventTimer > 0) ? (ventTimer % 4 - 2) : 0;
+        int shake = (ventTimer > 10) ? 5 : 0;
+
+        // COLORS
+        java.awt.Color brass = new java.awt.Color(180, 130, 40);
+        java.awt.Color acidGreen = new java.awt.Color(50, 255, 50);
+        java.awt.Color toxicPurple = new java.awt.Color(180, 0, 255);
+        java.awt.Color glass = new java.awt.Color(200, 255, 255, 100);
+
+        if (level < 5) {
+            // 1. THE MAIN FLASK
+            g2.setColor(glass);
+            g2.fillOval(center - 15 + jitter, center - 5 - shake, 30, 30); // Belly
+            g2.fillRect(center - 6 + jitter, center - 20 - shake, 12, 20); // Neck
+
+            // 2. THE LIQUID (Height depends on level)
+            g2.setColor(level >= 3 ? toxicPurple : acidGreen);
+            g2.fillOval(center - 12 + jitter, center + 2 - shake, 24, 20);
+
+            // 3. BRASS HARDWARE (Level 2+)
+            if (level >= 2) {
+                g2.setColor(brass);
+                g2.fillRect(center - 8 + jitter, center - 22 - shake, 16, 6); // Cap
+                g2.fillOval(center + 10 + jitter, center - 5 - shake, 8, 8); // Gauge
+                g2.setColor(java.awt.Color.WHITE);
+                g2.drawOval(center + 10 + jitter, center - 5 - shake, 8, 8); // Gauge Needle
+            }
+
+            // 4. PRESSURIZED TUBES (Level 4)
+            if (level >= 4) {
+                g2.setColor(brass);
+                g2.fillRect(center - 22 + jitter, center - 5 - shake, 6, 20); // Left Tank
+                g2.fillRect(center + 16 + jitter, center - 5 - shake, 6, 20); // Right Tank
+                g2.setColor(acidGreen);
+                g2.setStroke(new java.awt.BasicStroke(2f));
+                g2.drawArc(center - 20, center - 15, 40, 20, 0, 180); // Connecting Tube
+            }
+        } 
+        if (level == 5) {
+                    // ======================================================
+                    // LEVEL 5: THE OMEGA ISOTOPE CHASSIS
+                    // ======================================================
+                    long t = System.currentTimeMillis();
+
+                    // 1. THE REACTION GLOW (Outer pulsing toxic mist)
+                    int pulse = (int)(Math.sin(t / 150.0) * 40) + 40;
+                    img.setColor(new Color(50, 255, 50, pulse));
+                    img.fillOval(0, 0, size-1, size-1);
+
+                    // 2. THE CHASSIS (Sleek Carbon-Fiber vertical frame)
+                    img.setColor(new Color(20, 20, 25));
+                    // Two sharp vertical pillars
+                    img.fillRect(center - 10, 2, 4, size - 4);
+                    img.fillRect(center + 6, 2, 4, size - 4);
+                    // Top and Bottom Caps
+                    img.fillRect(center - 12, 2, 24, 4);
+                    img.fillRect(center - 12, size - 6, 24, 4);
+
+                    // 3. THE PLASMA BEAM (Central core)
+                    // Oscillating width to look like a vibrating laser
+                    int beamW = (int)(Math.sin(t / 50.0) * 3) + 4;
+                    img.setColor(new Color(0, 255, 200)); // Cyan-Green plasma
+                    img.fillRect(center - (beamW/2), 6, beamW, size - 12);
+                    
+                    // 4. ROTATING ORBITALS (The "Radioactive particles")
+                    // Three white electrons orbiting the core in 3D-ish space
+                    img.setColor(Color.WHITE);
+                    for (int i = 0; i < 3; i++) {
+                        double angle = (t / 250.0) + (i * 2.09); // Spaced out
+                        int orbitX = center + (int)(Math.cos(angle) * 12);
+                        int orbitY = center + (int)(Math.sin(angle) * 8); // Elliptical
+                        img.fillOval(orbitX - 2, orbitY + (i*2) - 2, 4, 4);
+                        // Tiny tracer lines
+                        img.setColor(new Color(255, 255, 255, 100));
+                        img.drawLine(center, center, orbitX, orbitY);
+                    }
+
+                    // 5. UNSTABLE DISCHARGE (Purple lightning arcs)
+                    if (t % 12 < 4) { // Fast flickering
+                        img.setColor(new Color(200, 0, 255));
+                        // Sharp zigzag lines leaking from the pillars
+                        img.drawLine(center-10, 10, center-18, 5);
+                        img.drawLine(center+10, size-10, center+18, size-5);
+                    }
+
+                    // 6. THE HAZARD MARKING
+                    img.setColor(Color.BLACK);
+                    img.fillRect(center-2, center-2, 4, 4); // Tiny core center dot
+                }
+
+        g2.dispose();
+        return img;
+    }
     
     private static void fillArc(GreenfootImage img, int x, int y, int w, int h, int start, int angle, Color color) {
         java.awt.Graphics2D g = img.getAwtImage().createGraphics();
         g.setColor(new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()));
         g.fillArc(x, y, w, h, start, angle);
+        g.dispose();
+    }
+    
+    private static void drawArc(GreenfootImage img, int x, int y, int w, int h, int start, int angle, Color color) {
+        java.awt.Graphics2D g = img.getAwtImage().createGraphics();
+        g.setColor(new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()));
+        g.setStroke(new java.awt.BasicStroke(2.0f)); // Gives the "claws" some thickness
+        g.drawArc(x, y, w, h, start, angle);
         g.dispose();
     }
 
