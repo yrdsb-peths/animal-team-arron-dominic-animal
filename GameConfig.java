@@ -147,7 +147,7 @@ public class GameConfig {
     public static final int COWARD_UNIT_HP = 1;       // Dies instantly if caught off guard
     public static final double COWARD_UNIT_COOLDOWN = 1.0; 
     public static final int COWARD_UNIT_DAMAGE = 50;
-    public static final int COWARD_SCARE_RANGE = s(50); // Distance before it hides
+    public static final int COWARD_SCARE_RANGE = s(100); // Distance before it hides
     // ========================================================================
     // ── UNIT ABILITY UNLOCKS & STATS ────────────────────────────────────────
     // ========================================================================

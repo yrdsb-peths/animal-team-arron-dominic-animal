@@ -191,27 +191,75 @@ public class UnitVisuals {
                 }
                 break;
 
-            case 7: // COWARD (Helmet evolution)
-                img.fillOval(5, 5, size-10, size-10); // Lvl 1
+           case 7: // COWARD (OG Helmet 1-4 + The Circus 5)
+                long t = System.currentTimeMillis();
+                // THE COWARD SHIVER: He vibrates 100% of the time
+                int shakeX = Greenfoot.getRandomNumber(3) - 1;
+                int shakeY = Greenfoot.getRandomNumber(3) - 1;
                 
-                if (level >= 2) { // Iron Helmet
-                    // Replace: img.fillArc(5, 5, size-10, size-10, 0, 180); 
-                    fillArc(img, 5, 5, size-10, size-10, 0, 180, Color.GRAY); 
-                }
-                if (level >= 3) { // Helmet Spike
-                    img.fillPolygon(new int[]{center-3, center+3, center}, new int[]{5, 5, 0}, 3);
-                }
-                if (level >= 4) { // Shield
-                    img.setColor(lvlAccent);
-                    img.fillRect(size-8, center-10, 6, 20);
-                }
-                if (level == 5) { // Spartan Crest
-                    // Replace: img.fillArc(center-10, 0, 20, 15, 0, 180);
-                    fillArc(img, center-10, 0, 20, 15, 0, 180, Color.RED);
-                }
-                break;
+                if (level < 5) {
+                    // ======================================================
+                    // LVL 1-4: THE OG HELMET EVOLUTION (With Shivers)
+                    // ======================================================
+                    img.setColor(baseColor); // Yellow head
+                    img.fillOval(5 + shakeX, 5 + shakeY, size-10, size-10); 
+                    
+                    if (level >= 2) { // Iron Helmet
+                        fillArc(img, 5 + shakeX, 5 + shakeY, size-10, size-10, 0, 180, Color.GRAY); 
+                    }
+                    if (level >= 3) { // Helmet Spike
+                        img.setColor(Color.GRAY);
+                        img.fillPolygon(new int[]{center-3+shakeX, center+3+shakeX, center+shakeX}, 
+                                        new int[]{5+shakeY, 5+shakeY, shakeY}, 3);
+                    }
+                    if (level >= 4) { // Pathetic Little Shield
+                        img.setColor(lvlAccent);
+                        img.fillRect(size-8+shakeX, center-10+shakeY, 6, 20);
+                    }
+                } else {
+                    // ======================================================
+                    // LEVEL 5: THE ULTIMATE CIRCUS BUNKER
+                    // ======================================================
+                    // 1. THE BUNKER (Rusty trapezoid)
+                    img.setColor(new Color(60, 60, 70)); 
+                    int[] bx = {2 + shakeX, size-2 + shakeX, size-8 + shakeX, 8 + shakeX};
+                    int[] by = {size-2 + shakeY, size-2 + shakeY, 10 + shakeY, 10 + shakeY};
+                    img.fillPolygon(bx, by, 4);
+                    
+                    // 2. THE WHITE SURRENDER FLAG (Waving)
+                    int flagOffset = (int)(Math.sin(t / 100.0) * 5);
+                    img.setColor(Color.LIGHT_GRAY);
+                    img.fillRect(center + shakeX, 0, 2, 10); // Pole
+                    img.setColor(Color.WHITE);
+                    img.fillRect(center + shakeX, flagOffset, 12, 8); 
+                    
+                    // 3. TERRIFIED EYES (Big and Blinking)
+                    if (t % 2000 > 150) { // Not blinking
+                        img.setColor(Color.WHITE);
+                        img.fillOval(center - 11 + shakeX, 18 + shakeY, 9, 9); 
+                        img.fillOval(center + 2 + shakeX, 18 + shakeY, 9, 9);
+                        img.setColor(Color.BLACK);
+                        img.fillOval(center - 7 + shakeX, 21 + shakeY, 4, 4); // Pupils
+                        img.fillOval(center + 6 + shakeX, 21 + shakeY, 4, 4);
+                    }
 
-        }
+                    // 4. THE CLOWN CREST (The "Circus" Spartan Crest)
+                    // It's the OG Spartan crest, but made of floppy red yarn
+                    fillArc(img, center-10 + shakeX, 0 + shakeY, 20, 15, 0, 180, Color.RED);
+                    img.setColor(new Color(255, 255, 0, 100)); // Yellow polka dots on the crest
+                    img.fillOval(center-2, 2, 4, 4);
+
+                    // 5. ANIMATED SWEAT
+                    img.setColor(new Color(0, 200, 255));
+                    int sweatY = 20 + (int)(t / 4 % 25);
+                    if (sweatY < size - 5) img.fillOval(size - 12 + shakeX, sweatY + shakeY, 2, 4);
+                    
+                    // 6. "HELP" CRAYON SCRIBBLE
+                    img.setColor(Color.WHITE);
+                    img.setFont(new Font("SansSerif", true, false, 9));
+                    img.drawString("HELP", 10 + shakeX, size - 5 + shakeY);
+                }
+            }
 
         return img;
     }
@@ -490,6 +538,87 @@ public class UnitVisuals {
                 }
 
         g2.dispose();
+        return img;
+    }
+    
+    public static GreenfootImage drawCoward(int level, boolean isScared, boolean lookLeft) {
+        int size = GameConfig.UNIT_SIZE;
+        int center = size / 2;
+        long t = System.currentTimeMillis();
+        GreenfootImage img = new GreenfootImage(size, size);
+        
+        // THE COWARD SHIVER: Constant vibration
+        int shakeX = Greenfoot.getRandomNumber(3) - 1;
+        int shakeY = Greenfoot.getRandomNumber(3) - 1;
+    
+        if (level < 5) {
+            // ======================================================
+            // LVL 1-4: OG HELMET DESIGN (Yellow Head -> Iron -> Spike -> Shield)
+            // ======================================================
+            img.setColor(Color.YELLOW); 
+            img.fillOval(5 + shakeX, 5 + shakeY, size-10, size-10); 
+            
+            if (level >= 2) fillArc(img, 5 + shakeX, 5 + shakeY, size-10, size-10, 0, 180, Color.GRAY); 
+            if (level >= 3) {
+                img.setColor(Color.GRAY);
+                img.fillPolygon(new int[]{center-3+shakeX, center+3+shakeX, center+shakeX}, 
+                                new int[]{5+shakeY, 5+shakeY, shakeY}, 3);
+            }
+            if (level >= 4) {
+                img.setColor(new Color(50, 150, 255)); // Blue Rare shield
+                img.fillRect(size-8+shakeX, center-10+shakeY, 6, 20);
+            }
+        } else {
+            // ======================================================
+            // LEVEL 5: THE OMEGA CIRCUS BUNKER (Dynamic Eyes)
+            // ======================================================
+            // 1. THE BUNKER (Sleek dark iron)
+            img.setColor(new Color(85, 85, 105));
+            int[] bx = {2 + shakeX, size-2 + shakeX, size-8 + shakeX, 8 + shakeX};
+            int[] by = {size-2 + shakeY, size-2 + shakeY, 10 + shakeY, 10 + shakeY};
+            img.fillPolygon(bx, by, 4);
+            
+            // 2. THE WHITE SURRENDER FLAG (Waving)
+            int flagSide = lookLeft ? -12 : 0; // Flip flag pole based on where he is looking
+            img.setColor(Color.GRAY);
+            img.fillRect(center + shakeX, 0, 2, 10); // Pole
+            img.setColor(Color.WHITE);
+            int wave = (int)(Math.sin(t / 100.0) * 4);
+            img.fillRect(center + shakeX + (lookLeft ? -12 : 2), 2 + wave, 12, 8); 
+            
+            // 3. TERRIFIED DYNAMIC EYES
+            boolean blink = (t % 2500 < 150);
+            if (!blink) {
+                img.setColor(Color.WHITE);
+                img.fillOval(center - 11 + shakeX, 18 + shakeY, 9, 9); // Left Eye
+                img.fillOval(center + 2 + shakeX, 18 + shakeY, 9, 9);  // Right Eye
+                
+                // PUPIL LOGIC: Darts left or right based on lookLeft
+                img.setColor(Color.BLACK);
+                int pupilDir = lookLeft ? -3 : 3;
+                img.fillOval(center - 7 + shakeX + pupilDir, 21 + shakeY, 4, 4);
+                img.fillOval(center + 6 + shakeX + pupilDir, 21 + shakeY, 4, 4);
+            } else {
+                img.setColor(Color.BLACK); // Closed eyes lines
+                img.drawLine(center-10, 22, center-2, 22);
+                img.drawLine(center+2, 22, center+10, 22);
+            }
+    
+            // 4. CLOWN CREST (Circus Spartan Wig)
+            fillArc(img, center-12 + shakeX, 0 + shakeY, 24, 15, 0, 180, Color.RED);
+            
+            // 5. ANIMATED SWEAT (Alternating sides)
+            img.setColor(new Color(0, 200, 255));
+            int sweatY = 20 + (int)(t / 4 % 25);
+            int sweatSide = lookLeft ? 5 : size - 10;
+            if (sweatY < size - 8) img.fillOval(sweatSide + shakeX, sweatY + shakeY, 2, 5);
+    
+            // 6. CRAYON CRY FOR HELP
+            img.setColor(Color.WHITE);
+            img.setFont(new Font("SansSerif", true, false, 9));
+            img.drawString("HELP", lookLeft ? size-28 : 5, size-5);
+        }
+        
         return img;
     }
     

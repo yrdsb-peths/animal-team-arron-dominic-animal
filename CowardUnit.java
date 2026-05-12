@@ -13,6 +13,7 @@ public class CowardUnit extends Unit {
 
     @Override
     protected void updateBehavior(MyWorld world) {
+        super.updateBehavior(world);
         List<Enemy> closeEnemies = getObjectsInRange(GameConfig.COWARD_SCARE_RANGE, Enemy.class);
         boolean shouldBeScared = !closeEnemies.isEmpty();
 
@@ -28,6 +29,10 @@ public class CowardUnit extends Unit {
 
         if (shouldBeScared != isScared) {
             isScared = shouldBeScared;
+            updateVisual();
+        }
+        
+        if (world.getActCount() % 5 == 0) {
             updateVisual();
         }
 
@@ -51,16 +56,22 @@ public class CowardUnit extends Unit {
     }
 
     @Override public boolean isTargetable() { return !isScared; }
-    @Override public void updateVisual() {
-        if (isScared) {
-            GreenfootImage hidden = new GreenfootImage(20, 10);
-            hidden.setColor(new Color(130, 80, 30));
-            hidden.fillOval(0, 0, 20, 10);
-            setImage(hidden);
-        } else {
-            setImage(UnitVisuals.draw(7, level, Color.YELLOW));
+    @Override
+    public void updateVisual() {
+        boolean lookLeft = false;
+    
+        // FIX: Only try to find a target if the unit is actually in the world
+        if (getWorld() != null) {
+            Enemy target = findTarget();
+            if (target != null && target.getX() < getX()) {
+                lookLeft = true;
+            }
         }
+    
+        // Pass the look direction (defaults to false/right if not in world)
+        setImage(UnitVisuals.drawCoward(level, isScared, lookLeft));
         setNormalImage(getImage());
     }
+
     @Override protected int getBaseHPFromConfig() { return GameConfig.COWARD_UNIT_HP; }
 }
