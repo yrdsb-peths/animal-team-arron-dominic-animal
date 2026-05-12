@@ -4,7 +4,9 @@ public class GameConfig {
 
    // ── DEBUG SETTINGS ──────────────────────────────────────────────────
     public static final boolean DEBUG_MODE = true; // Set to false for final build
-      
+          
+    public static final String DEBUG_KEY_WAVE_SKIP_1  = "[";
+    public static final String DEBUG_KEY_WAVE_SKIP_10 = "]";
     //Economy Config
     public static final int STARTING_GOLD = 20000000;
     
@@ -106,6 +108,9 @@ public class GameConfig {
     public static final int BASIC_UNIT_HP = 3;
     public static final double BASIC_UNIT_COOLDOWN = 0.8; // Shoots every 0.8 seconds
     public static final int BASIC_UNIT_DAMAGE = 50;
+    // --- COMMANDER / RAGE SETTINGS ---
+    public static final double COMMANDER_SPEED_BOOST = 2; // 30% faster fire rate for allies
+    public static final double COMMANDER_DAMAGE_BOOST = 1.5; // 30% more damage for allies
     
     public static final int SNIPER_UNIT_COST = 100;
     public static final int SNIPER_UNIT_HP = 8;

@@ -38,9 +38,23 @@ public class CalamityManager {
 
     // 1. Add 'String key' to parameters
     private static void handleDebugKeys(MyWorld world, String key) {
-        // String key = Greenfoot.getKey();  <--- DELETE THIS LINE
         if (key == null) return;
+        if (key.equals(GameConfig.DEBUG_KEY_WAVE_SKIP_1)) {
+            WaveManager wm = getWaveManager(world);
+            if (wm != null) {
+                // Clear existing enemies so the new difficulty spawns immediately
+                world.removeObjects(world.getObjects(Enemy.class));
+                wm.debugSkipToWave(wm.getWaveNumber() + 1);
+            }
+        }
         
+        if (key.equals(GameConfig.DEBUG_KEY_WAVE_SKIP_10)) {
+            WaveManager wm = getWaveManager(world);
+            if (wm != null) {
+                world.removeObjects(world.getObjects(Enemy.class));
+                wm.debugSkipToWave(wm.getWaveNumber() + 10);
+            }
+        }
         if (key.equals(GameConfig.DEBUG_KEY_QUAKE)) runEarthquake(world);
         if (key.equals(GameConfig.DEBUG_KEY_MATRIX)) runMatrix(world);
         if (key.equals(GameConfig.DEBUG_KEY_DROUGHT)) runGreatDrought(world);
@@ -56,6 +70,7 @@ public class CalamityManager {
 
     private static void triggerRandomCalamity(MyWorld world) {
         int choice = GameRNG.getRandomNumber(GameConfig.TOTAL_CALAMITIES);
+        
         switch (choice) {
             case 0: runEarthquake(world); break;
             case 1: runMatrix(world); break;
@@ -69,6 +84,7 @@ public class CalamityManager {
             case 9: runKamikazeSwarm(world); break;
             case 10: runRumbling(world); break;
         }
+
     }
     
     // ── HELPER TO GET WAVE MANAGER ──

@@ -1,63 +1,97 @@
+// ==================================================
+// FILE: ./BasicUnit.java
+// ==================================================
 import greenfoot.*;
 import java.util.List;
 
 public class BasicUnit extends Unit {
     private int stackCount = 1;
     private boolean isRaged = false;
-    private GameTimer domainTimer = new GameTimer(10.0, true); // Pulses every 10s
-    private GameTimer domainActiveTimer = new GameTimer(4.0, false); 
+    private GameTimer domainTimer = new GameTimer(10.0, true); 
+    private DomainExpansion myDomain = null; // Track our domain!
+    private GameTimer domainRestTimer = new GameTimer(7.0, false); 
+    private boolean domainIsReady = true;
 
     public BasicUnit(int laneIndex, int colIndex) {
         super(GameConfig.BASIC_UNIT_HP, laneIndex, colIndex, GameConfig.BASIC_UNIT_COOLDOWN);
         this.stackCount = 1; 
+        // CRITICAL: You must start the timer or it stays at 10.0 forever!
+        domainTimer.start(); 
         updateVisual();
     }
     
     @Override
     protected void updateBehavior(MyWorld world) {
-        // 1. RADAR CHECK (1-unit radius = roughly 100 pixels)
-        List<Enemy> neighbors = getObjectsInRange(GameConfig.s(100), Enemy.class);
+        // 1. RADAR CHECK (~1.5 cells)
+        List<Enemy> neighbors = getObjectsInRange(GameConfig.s(120), Enemy.class);
         boolean enemyInPersonalSpace = !neighbors.isEmpty();
 
         // 2. RAGE MODE (Level 3+)
         if (level >= GameConfig.BASIC_RAGE_UNLOCK) {
             if (enemyInPersonalSpace && !isRaged) {
                 isRaged = true;
-                world.addObject(new RageAura(this), getX(), getY()); 
-            } else if (!enemyInPersonalSpace && isRaged) {
+                updateVisual();
+                
+                // ADJUST SPEED HERE:
+                double newCd = (GameConfig.BASIC_UNIT_COOLDOWN * Math.pow(GameConfig.LEVEL_COOLDOWN_MULT, level - 1)) 
+                               / GameConfig.COMMANDER_SPEED_BOOST; 
+                attackCooldown.setDuration(newCd);
+            }
+             else if (!enemyInPersonalSpace && isRaged) {
                 isRaged = false;
+                updateVisual();
+                // RESET TO NORMAL
+                double normalCd = (GameConfig.BASIC_UNIT_COOLDOWN * Math.pow(GameConfig.LEVEL_COOLDOWN_MULT, level - 1));
+                attackCooldown.setDuration(normalCd);
             }
         }
 
         // 3. COMMANDER DOMAIN (Level 5)
         if (level >= GameConfig.BASIC_DOMAIN_UNLOCK) {
-            domainTimer.update(world);
-            if (domainTimer.isExpired() && enemyInPersonalSpace) {
-                domainActiveTimer.reset();
-                domainActiveTimer.start();
-                world.addObject(new DomainExpansion(GameConfig.s(120)), getX(), getY());
-            }
-            domainActiveTimer.update(world);
-        }
-
-        // 4. ATTACK SPEED LOGIC
-        // If Raged, we force-tick the cooldown an extra time (50% faster)
-        if (isRaged) attackCooldown.forceTick();
+            // PHASE 1: Domain is currently active in the world
+            if (myDomain != null && myDomain.getWorld() != null) {
+                domainIsReady = false; // Cannot be ready while domain is out
+                domainRestTimer.stop(); // Keep rest timer paused
+            } 
+            else {
+                // PHASE 2: Domain just vanished, start the 5 second rest
+                if (!domainIsReady && !domainRestTimer.isActive() && !domainRestTimer.isExpired()) {
+                    domainRestTimer.reset();
+                    domainRestTimer.start();
+                }
         
+                // PHASE 3: Tick the rest timer
+                domainRestTimer.update(world);
+        
+                if (domainRestTimer.isExpired()) {
+                    domainIsReady = true;
+                }
+        
+                // PHASE 4: If rested and ready, check for enemies to trigger
+                if (domainIsReady) {
+                    boolean enemyNearby = !getObjectsInRange(GameConfig.s(150), Enemy.class).isEmpty();
+                    if (enemyNearby) {
+                        myDomain = new DomainExpansion(GameConfig.s(160));
+                        world.addObject(myDomain, getX(), getY());
+                        
+                        // Reset the rest timer for the next cycle
+                        domainRestTimer.reset(); 
+                        domainIsReady = false;
+                    }
+                }
+            }
+        }
         super.updateBehavior(world);
     }
     
     public void addStack() {
         stackCount++;
-        
-        // Calculate the base HP for a single unit AT THIS LEVEL
         double levelHPBoost = Math.pow(GameConfig.LEVEL_HP_MULT, this.level - 1);
         int unitBaseHPAtCurrentLevel = (int)(GameConfig.BASIC_UNIT_HP * levelHPBoost);
         
-        // Use that boosted base HP to calculate the new stack total
         int newMaxHP = (int)(unitBaseHPAtCurrentLevel * (stackCount * 0.6 + Math.sqrt(stackCount) * 0.4));
         
-        this.health += (newMaxHP - this.maxHealth); // Heal by the difference
+        this.health += (newMaxHP - this.maxHealth); 
         this.maxHealth = newMaxHP;
         
         updateVisual();
@@ -65,18 +99,17 @@ public class BasicUnit extends Unit {
 
     @Override
     public void updateVisual() {
-        // Get the tactical background frame from UnitVisuals
         GreenfootImage img = UnitVisuals.draw(1, level, Color.GREEN);
         int size = img.getWidth();
         
-        // Draw the Swarm Dots on top of the frame
+        // --- DRAW THE SWARM DOTS ---
         int displayCount = Math.max(1, stackCount);
         int gridSide = (int)Math.ceil(Math.sqrt(displayCount));
         int dotSize = Math.max(2, (size / gridSide) - 2); 
-        int offset = (size - (gridSide * (dotSize + 1))) / 2; // Center the dots
+        int offset = (size - (gridSide * (dotSize + 1))) / 2; 
 
         img.setColor(Color.GREEN);
-        if (level == 5) img.setColor(Color.WHITE); // Elite troops at Lvl 5
+        if (level == 5) img.setColor(Color.WHITE); 
 
         int drawn = 0;
         for (int row = 0; row < gridSide; row++) {
@@ -86,6 +119,19 @@ public class BasicUnit extends Unit {
                 drawn++;
             }
         }
+
+        // --- RAGE VISUAL OVERLAY ---
+        if (isRaged) {
+            // 1. Crimson wash over the whole unit
+            img.setColor(new Color(255, 0, 0, 80)); 
+            img.fillRect(0, 0, size, size);
+            
+            // 2. Angry thick glowing red border
+            img.setColor(Color.RED);
+            img.drawRect(0, 0, size-1, size-1);
+            img.drawRect(1, 1, size-3, size-3);
+            img.drawRect(2, 2, size-5, size-5);
+        }
         
         setImage(img);
         setNormalImage(img);
@@ -93,10 +139,7 @@ public class BasicUnit extends Unit {
 
     @Override
     protected void attack(Enemy target) {
-        // Attack the main target
         fireAt(target);
-
-        // SWARM MECHANIC: Also fire at adjacent lanes if Level 2+
         if (level >= GameConfig.BASIC_SWARM_UNLOCK) {
             Enemy topTarget = findTargetInLane(laneIndex - 1);
             if (topTarget != null) fireAt(topTarget);
@@ -127,10 +170,7 @@ public class BasicUnit extends Unit {
         return furthest;
     }
     
-    public int getStackCount()
-    {
-        return stackCount;
-    }
-    
+    public int getStackCount() { return stackCount; }
     @Override protected int getBaseHPFromConfig() { return GameConfig.BASIC_UNIT_HP; }
+    
 }

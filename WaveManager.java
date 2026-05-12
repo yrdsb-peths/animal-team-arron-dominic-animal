@@ -380,4 +380,15 @@ public class WaveManager {
         }
     }
     
+    public void debugSkipToWave(int targetWave) {
+        // Ensure we don't go below 1
+        this.currentWave = Math.max(1, targetWave - 1); 
+        
+        // Wipe the current field so the new difficulty takes over instantly
+        // (Wait for startNextWave to increment it back to the target)
+        startNextWave(); 
+        
+        // Visual feedback
+        System.out.println("DEBUG: Jumped to Wave " + currentWave);
+    }
 }

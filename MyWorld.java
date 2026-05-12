@@ -17,13 +17,12 @@ public class MyWorld extends World {
        
         // Define the layer order (first = on top, last = at bottom)
         setPaintOrder(
+                    DomainExpansion.class,  // The L5 Basic Unit's pulse
             UpgradeCard.class,      // SHOP CARDS ON TOP
             BossIntroOverlay.class, // Cinemtatics on very top
             FloatingText.class,     // Damage/Money popups
             Explosion.class,        // Big fiery blasts should cover everything
             HealEffect.class,       // Floating "+" signs
-            DomainExpansion.class,  // The L5 Basic Unit's pulse
-            RageAura.class,         // Red glow under Basic Units
             FrostPulse.class,       // Sniper's ice blast
             BlockSpark.class,       // Shield/Thorn sparks
             BlockSpark.class,

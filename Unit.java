@@ -61,6 +61,13 @@ public abstract class Unit extends Actor {
             attackCooldown.update(world);
         }
         
+        if (hasCommanderBuff()) {
+            // If boost is 1.3, we want to tick twice every 3rd frame (roughly 30% faster)
+            if (world.getActCount() % 3 == 0) {
+                attackCooldown.update(world);
+            }
+        }
+
         // OVERCLOCK MAGIC
         if (AbilityManager.isOverclocked()) {
             attackCooldown.update(world);
@@ -209,8 +216,10 @@ public abstract class Unit extends Actor {
     private int buffFrames = 0;
     
     public void applyCommanderBuff() { 
-        // 300 frames = 5 full seconds of +30% damage and 30% damage reduction!
-        buffFrames = 300; 
+        // Changed from 300 to 10. 
+        // The Domain reapplies this every frame, so it only drops 
+        // a fraction of a second after the Domain vanishes!
+        buffFrames = 10; 
     }
     
     public boolean hasCommanderBuff() { 
