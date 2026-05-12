@@ -129,7 +129,7 @@ public class GameConfig {
     public static final int RAILGUN_UNIT_DAMAGE = 50;
     public static final int RAILGUN_TRAIL_DAMAGE       = 25;   // Damage per half-second
     public static final double RAILGUN_SUPER_LASER_CD  = 30.0; // 30 seconds cooldown!
-    public static final int RAILGUN_SUPER_LASER_DMG    = 25000;// Absolutely 
+    public static final int RAILGUN_SUPER_LASER_DMG    = 100000000;// Absolutely 
     
     public static final int ALCHEMIST_UNIT_COST = 200;
     public static final int ALCHEMIST_UNIT_HP = 4;
@@ -194,13 +194,13 @@ public class GameConfig {
     // --- 1. PLAYER POWER SPIKES (The "Grace Period" Creators) ---
     public static final int MAX_UNIT_LEVEL = 5;
     // Base ^ (Level-1). 
-    public static final float LEVEL_HP_MULT       = 2.2f;  
-    public static final float LEVEL_DMG_MULT      = 2.5f;  
+    public static final float LEVEL_HP_MULT       = 3.2f;  
+    public static final float LEVEL_DMG_MULT      = 4.0f;  
     public static final float LEVEL_COOLDOWN_MULT = 0.90f; 
     
     // THE LEVEL 4 SPIKE: When upgrading to Lvl 4, multiply stats by this instead!
-    public static final float LVL_4_STAT_SPIKE_HP  = 3.0f; 
-    public static final float LVL_4_STAT_SPIKE_DMG = 3.5f;
+    public static final float LVL_4_STAT_SPIKE_HP  = 5.0f; 
+    public static final float LVL_4_STAT_SPIKE_DMG = 5.5f;
     public static final float LEVEL_VISUAL_SCALE  = 0.12f; 
 
     // --- 2. ECONOMY: THE HEAVY COST OF POWER ---

@@ -354,34 +354,32 @@ public class WaveManager {
             double hpMult = 1.0;
             double dmgMult = 1.0;
 
-            if (waveNum <= 20) {
-                // TIER 1 (Waves 1-20): Gentle Linear. Lets Lvl 1 & 2 units shine.
-                hpMult = 1.0 + (waveNum * 0.4); 
-                dmgMult = 1.0 + (waveNum * 0.2);
-            } 
-            else if (waveNum <= 50) {
-                // TIER 2 (Waves 21-50): Mild Exponential. Forces Lvl 3 upgrades.
-                // Starts where Tier 1 left off (~9.0x) and grows gently.
-                hpMult = 9.0 * Math.pow(1.08, waveNum - 20);
-                dmgMult = 5.0 + (waveNum * 0.4);
+            if (waveNum <= 40) {
+                // TIER 1 (1-40): Linear Fodder. 
+                // Wave 40 HP: 9.0x (900 HP). Lvl 3 Units one-shot everything.
+                hpMult = 1.0 + (waveNum * 0.2); 
+                dmgMult = 1.0 + (waveNum * 0.1);
             } 
             else if (waveNum <= 80) {
-                // TIER 3 (Waves 51-80): Aggressive Exponential. Forces Lvl 4 Spike.
-                // Starts where Tier 2 left off (~90x).
-                hpMult = 90.0 * Math.pow(1.12, waveNum - 50);
-                dmgMult = 15.0 + (waveNum * 1.0);
+                // TIER 2 (41-80): The Heroic Era.
+                // Wave 80 HP: 69x (6,900 HP). Lvl 5 Units one-shot everything.
+                hpMult = 9.0 + (waveNum - 40) * 1.5;
+                dmgMult = 5.0 + (waveNum * 0.2);
+            } 
+            else if (waveNum <= 120) {
+                // TIER 3 (81-120): The Challenge Era. Soft Exponential.
+                // Wave 120 HP: ~450x (45,000 HP). Lvl 5 units take 5-7 shots.
+                hpMult = 69.0 * Math.pow(1.05, waveNum - 80);
+                dmgMult = 15.0 + (waveNum * 0.5);
             } 
             else {
-                // TIER 4 (Waves 81-100+): The Endgame. Demands Level 5 and Abilities.
-                // Starts where Tier 3 left off (~2700x).
-                hpMult = 2700.0 * Math.pow(1.18, waveNum - 80);
-                dmgMult = 45.0 + (waveNum * 2.0);
+                // TIER 4 (121+): THE ENDLESS VOID. 
+                // Scaling becomes brutal only after you've beat the "Main Game".
+                hpMult = 450.0 * Math.pow(1.15, waveNum - 120);
+                dmgMult = 50.0 + (waveNum * 1.0);
             }
 
-            // Slimes always get 2.5x more HP than whatever the current multiplier is
-            if (type == SLIME) {
-                hpMult *= 2.5; 
-            }
+            if (type == SLIME) hpMult *= 2.0; // Slimes are tougher but not impossible
 
             e.scaleStats((float)hpMult, (float)dmgMult, waveNum);
             
