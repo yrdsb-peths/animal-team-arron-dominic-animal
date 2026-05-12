@@ -33,14 +33,14 @@ public class GameConfig {
     public static final int    BLOODMOON_SWARM    = 5;   // Number of extra enemies spawned
     
     // Kamikaze Swarm (The Quantity Threat)
-    public static final double KAMIKAZE_SWARM_COUNT_MULT = 5.0;  // 10x normal wave size!
+    public static final double KAMIKAZE_SWARM_COUNT_MULT = 1.5;  // 1.5x normal wave size!
     public static final int    KAMIKAZE_SWARM_SHIELD     = 3;    // Ignores 3 shots
     
     public static final double SHIELD_SWARM_COUNT_MULT = 1.0;  // normal wave size
     public static final int RUMBLING_BOMBER_CHANCE = 35;
     
    // Blood Moon (The Endurance Slime Swarm)
-    public static final double BLOODMOON_COUNT_MULT      = 4.0;  // 4x normal wave size (lasts forever!)
+    public static final double BLOODMOON_COUNT_MULT      = 1.5;  // 1.5x normal wave size (lasts forever!)
     public static final double BLOODMOON_SPAWN_RATE      = 0.25; // Break the 0.5s cap! 4 slimes per second!
     public static final int    BLOODMOON_SHIELD          = 2;    // Ignores 2 shots
     public static final double BLOODMOON_HP_MULT         = 2.0;  // 2x Base HP (on top of scaling!)
@@ -128,6 +128,11 @@ public class GameConfig {
     public static final int RAILGUN_UNIT_HP = 5;
     public static final double RAILGUN_UNIT_COOLDOWN = 2.0; // Shoots slow, but clears waves
     public static final int RAILGUN_UNIT_DAMAGE = 50;
+    public static final int RAILGUN_TRAIL_UNLOCK       = 2;    // Leaves a burning line
+    public static final int RAILGUN_TRAIL_DAMAGE       = 25;   // Damage per half-second
+    public static final int RAILGUN_SUPER_LASER_UNLOCK = 5;    // Manual Click Ultimate!
+    public static final double RAILGUN_SUPER_LASER_CD  = 30.0; // 30 seconds cooldown!
+    public static final int RAILGUN_SUPER_LASER_DMG    = 25000;// Absolutely 
     
     public static final int ALCHEMIST_UNIT_COST = 200;
     public static final int ALCHEMIST_UNIT_HP = 4;
@@ -163,11 +168,7 @@ public class GameConfig {
     // --- SNIPER UNIT ---
     public static final int SNIPER_DEBUFF_UNLOCK       = 2;    // Enemies deal less damage
     public static final float SNIPER_FREEZE_WEAKNESS   = 0.5f; // Deals 50% damage while frozen
-    
-    // --- RAILGUN UNIT ---
-    public static final int RAILGUN_TRAIL_UNLOCK       = 2;    // Leaves a burning line
-    public static final int RAILGUN_TRAIL_DAMAGE       = 25;   // Damage per half-second
-    
+  
     // --- WALL UNITS ---
     public static final int WALL_THORNS_UNLOCK         = 2; 
     public static final int WALL_HEAL_UNLOCK           = 4;    // Auto-heals 3% HP every second
