@@ -8,7 +8,7 @@ public class GameConfig {
     public static final String DEBUG_KEY_WAVE_SKIP_1  = "[";
     public static final String DEBUG_KEY_WAVE_SKIP_10 = "]";
     //Economy Config
-    public static final int STARTING_GOLD = 2000;
+    public static final int STARTING_GOLD = 5000;
     
     // ── CALAMITY MASTER SETTINGS ────────────────────────────────────────
     public static final int CALAMITY_INTERVAL = 5;      // Happens every 5 waves
