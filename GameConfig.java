@@ -8,7 +8,7 @@ public class GameConfig {
     public static final String DEBUG_KEY_WAVE_SKIP_1  = "[";
     public static final String DEBUG_KEY_WAVE_SKIP_10 = "]";
     //Economy Config
-    public static final int STARTING_GOLD = 500000000;
+    public static final int STARTING_GOLD = 5000;
     
     // ── CALAMITY MASTER SETTINGS ────────────────────────────────────────
     public static final int CALAMITY_INTERVAL = 5;      // Happens every 5 waves
@@ -21,7 +21,6 @@ public class GameConfig {
     public static final int    RAIN_TICK_CHANCE   = 10; // Out of 1000
     public static final int    FOG_REVEAL_RANGE   = s(150);
     
-    
     // Laser
     public static final int LASER_CHARGE_TIME = 90;  // Aiming phase (flicker)
     public static final int LASER_BLAST_TIME  = 20;  // How long the "Big Beam" stays
@@ -33,18 +32,18 @@ public class GameConfig {
     public static final int    BLOODMOON_SWARM    = 5;   // Number of extra enemies spawned
     
     // Kamikaze Swarm (The Quantity Threat)
-    public static final double KAMIKAZE_SWARM_COUNT_MULT = 1.5;  // 1.5x normal wave size!
-    public static final int    KAMIKAZE_SWARM_SHIELD     = 3;    // Ignores 3 shots
+    public static final double KAMIKAZE_SWARM_COUNT_MULT = 0.8;  // 0.8x normal wave size!
+    public static final int    KAMIKAZE_SWARM_SHIELD     = 5;    // Ignores 5 shots
     
     public static final double SHIELD_SWARM_COUNT_MULT = 1.0;  // normal wave size
     public static final int RUMBLING_BOMBER_CHANCE = 35;
     
    // Blood Moon (The Endurance Slime Swarm)
-    public static final double BLOODMOON_COUNT_MULT      = 1.5;  // 1.5x normal wave size (lasts forever!)
+    public static final double BLOODMOON_COUNT_MULT      = 0.8;  // 0.8x normal wave size (lasts forever!)
     public static final double BLOODMOON_SPAWN_RATE      = 0.25; // Break the 0.5s cap! 4 slimes per second!
-    public static final int    BLOODMOON_SHIELD          = 2;    // Ignores 2 shots
-    public static final double BLOODMOON_HP_MULT         = 2.0;  // 2x Base HP (on top of scaling!)
-    public static final float  BLOODMOON_SPEED_BOOST     = 1.3f; // 30% faster
+    public static final int    BLOODMOON_SHIELD          = 5;    // Ignores 5 shots
+    public static final double BLOODMOON_HP_MULT         = 5.0;  // 5x Base HP (on top of scaling!)
+    public static final float  BLOODMOON_SPEED_BOOST     = 2f; // 100% faster
 
     // ── SUPERIOR SLIME SCALING ─────────────────────────────────────────
     // Slimes scale faster than normal enemies to stay terrifying
@@ -196,7 +195,7 @@ public class GameConfig {
     public static final int MAX_UNIT_LEVEL = 5;
     // Base ^ (Level-1). 
     public static final float LEVEL_HP_MULT       = 3.0f;  
-    public static final float LEVEL_DMG_MULT      = 4.0f;  
+    public static final float LEVEL_DMG_MULT      = 3.5f;  
     public static final float LEVEL_COOLDOWN_MULT = 0.85f; 
     public static final float LEVEL_VISUAL_SCALE  = 0.12f; 
     
