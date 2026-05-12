@@ -71,7 +71,7 @@ public class PlacementManager {
         world.addObject(previewActor, 0, 0);
     }
 
-    private void attemptPlacement(MyWorld world, int x, int y) {
+     private void attemptPlacement(MyWorld world, int x, int y) {
         int col = LaneManager.colFromX(x);
         int lane = LaneManager.laneFromY(y);
         
@@ -94,15 +94,9 @@ public class PlacementManager {
         
         if (existingUnit != null) return; 
         
-        // PLACEMENT EXPONENTIAL COST
-        int level = data.level;
-        if (selectedUnit == 1 && existingUnit instanceof BasicUnit) level = existingUnit.getLevel();
-    
-        // 1. Lower the multiplier (e.g., 1.8x instead of 3.0x)
-        // 2. Add a "Flat Level Tax" that is the same for all units
-        double techTax = Math.pow(4.0, level - 1) * 100; // Exponential tax, but same for everyone
-        int scaledPlacementCost = (int)(data.cost + techTax); 
-        
+        // --- FIXED: PLACEMENT EXPONENTIAL COST ---
+        // Exactly matches the math in UIUnitCard.java
+        int scaledPlacementCost = (int)(data.cost * Math.pow(GameConfig.PLACEMENT_COST_MULT, data.level - 1)); 
         int finalCost = scaledPlacementCost * CalamityManager.getPriceMultiplier();
         
         if (CurrencyManager.spend(finalCost)) {

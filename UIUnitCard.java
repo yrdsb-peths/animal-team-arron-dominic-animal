@@ -41,7 +41,6 @@ public class UIUnitCard extends Actor {
         boolean isSelected = (pm.getSelectedUnit() == unitID);
         int size = GameConfig.s(50);
         
-        // Make the card slightly taller to fit everything
         GreenfootImage img = new GreenfootImage(size, size + 20);
         
         // Background
@@ -55,14 +54,15 @@ public class UIUnitCard extends Actor {
         // PRICE (Bottom)
         img.setColor(isSelected ? Color.BLACK : Color.WHITE);
         img.setFont(new Font("SansSerif", true, false, 12));
-        // Multiply the display price by the calamity multiplier!
+        
+        // --- FIXED: EXACT SAME MATH AS PLACEMENT MANAGER ---
         UnitRegistry.UnitData data = UnitRegistry.getById(unitID);
-        int scaledCost = (int)(price * Math.pow(GameConfig.PLACEMENT_COST_MULT, data.level - 1));
+        int scaledCost = (int)(data.cost * Math.pow(GameConfig.PLACEMENT_COST_MULT, data.level - 1));
         int currentDisplayPrice = scaledCost * CalamityManager.getPriceMultiplier();
     
         img.drawString("$" + GameConfig.formatNumber(currentDisplayPrice), 5, size + 15);
         
-        // KEYBOARD SHORTCUT (Top Right) - RESTORED!
+        // KEYBOARD SHORTCUT 
         img.setColor(isSelected ? Color.RED : Color.YELLOW);
         img.setFont(new Font("SansSerif", true, false, 14));
         img.drawString("[" + key + "]", size - 25, 15);
