@@ -35,42 +35,37 @@ public abstract class Unit extends Actor {
     }
 
     @Override
-
     public final void act() {
         MyWorld world = (MyWorld) getWorld();
         if (world == null || !world.getGSM().isState(PlayingState.class)) return;
         
-        if (hurtTimer.isActive()) {
-            hurtTimer.update(world);
-            if (hurtTimer.isExpired()) setImage(normalImage);
-        }
-        
-        if (isDead) {
-            handleDeath(world);
-            return;
-        }
-        
+        // ... existing hurt and death logic ...
+        if (isDead) { handleDeath(world); return; }
+    
+        // 1. Tick down the Commander Buff
         if (buffFrames > 0) buffFrames--;
-        
+    
+        // 2. PRIMARY COOLDOWN TICK
         if (isDroughtAffected) {
-            // Use the world reference directly instead of getObjects()
-            if (world.getActCount() % 2 == 0) {
-                attackCooldown.update(world);
-            }
+            if (world.getActCount() % 2 == 0) attackCooldown.update(world);
         } else {
             attackCooldown.update(world);
         }
-        
-        if (hasCommanderBuff()) {
-            // If boost is 1.3, we want to tick twice every 3rd frame (roughly 30% faster)
-            if (world.getActCount() % 3 == 0) {
+    
+        // 3. SPEED BOOST TICKS (Commander Buff & Overclock)
+        // If we have either buff, we tick the timer a second time
+        if (hasCommanderBuff() || AbilityManager.isOverclocked()) {
+            attackCooldown.update(world);
+        }
+    
+        // 4. SELF-RAGE TICK (Specific to BasicUnit)
+        // We check a new boolean we'll define in BasicUnit
+        if (isSelfRaged()) {
+            // Ticks a third time every 2nd frame (Approx 50% boost) 
+            // or just call update(world) for 100% boost.
+            if (world.getActCount() % 2 == 0) {
                 attackCooldown.update(world);
             }
-        }
-
-        // OVERCLOCK MAGIC
-        if (AbilityManager.isOverclocked()) {
-            attackCooldown.update(world);
         }
         
         updateBehavior(world);
@@ -234,5 +229,8 @@ public abstract class Unit extends Actor {
     // UPDATE act() to decrement the buff
     // (Inside your act() method, right under `if (isDead) return;`, add this:)
     // if (buffFrames > 0) buffFrames--;
+    
+    // Add this helper to the bottom of Unit.java so BasicUnit can talk to it
+    public boolean isSelfRaged() { return false; }
     
 }

@@ -22,27 +22,18 @@ public class BasicUnit extends Unit {
     
     @Override
     protected void updateBehavior(MyWorld world) {
-        // 1. RADAR CHECK (~1.5 cells)
+        // 1. RADAR CHECK
         List<Enemy> neighbors = getObjectsInRange(GameConfig.s(120), Enemy.class);
         boolean enemyInPersonalSpace = !neighbors.isEmpty();
-
-        // 2. RAGE MODE (Level 3+)
+    
+        // 2. RAGE STATE TOGGLE (No more setDuration!)
         if (level >= GameConfig.BASIC_RAGE_UNLOCK) {
             if (enemyInPersonalSpace && !isRaged) {
                 isRaged = true;
                 updateVisual();
-                
-                // ADJUST SPEED HERE:
-                double newCd = (GameConfig.BASIC_UNIT_COOLDOWN * Math.pow(GameConfig.LEVEL_COOLDOWN_MULT, level - 1)) 
-                               / GameConfig.COMMANDER_SPEED_BOOST; 
-                attackCooldown.setDuration(newCd);
-            }
-             else if (!enemyInPersonalSpace && isRaged) {
+            } else if (!enemyInPersonalSpace && isRaged) {
                 isRaged = false;
                 updateVisual();
-                // RESET TO NORMAL
-                double normalCd = (GameConfig.BASIC_UNIT_COOLDOWN * Math.pow(GameConfig.LEVEL_COOLDOWN_MULT, level - 1));
-                attackCooldown.setDuration(normalCd);
             }
         }
 
@@ -138,14 +129,18 @@ public class BasicUnit extends Unit {
     }
 
     @Override
-    protected void attack(Enemy target) {
-        fireAt(target);
+    protected void attack(Enemy dummyTarget) {
+        // 1. Always fire at the primary lane
+        Enemy center = findTargetInLane(laneIndex);
+        if (center != null) fireAt(center);
+    
+        // 2. Fire at adjacent lanes if Level 2+
         if (level >= GameConfig.BASIC_SWARM_UNLOCK) {
-            Enemy topTarget = findTargetInLane(laneIndex - 1);
-            if (topTarget != null) fireAt(topTarget);
+            Enemy top = findTargetInLane(laneIndex - 1);
+            if (top != null) fireAt(top);
             
-            Enemy bottomTarget = findTargetInLane(laneIndex + 1);
-            if (bottomTarget != null) fireAt(bottomTarget);
+            Enemy bottom = findTargetInLane(laneIndex + 1);
+            if (bottom != null) fireAt(bottom);
         }
     }
 
@@ -157,20 +152,63 @@ public class BasicUnit extends Unit {
         getWorld().addObject(new Projectile(target, totalDamage, null), getX(), getY());
     }
 
+        // Rename this to match the one I used in findTarget or update it:
     private Enemy findTargetInLane(int laneToCheck) {
         if (laneToCheck < 0 || laneToCheck >= GameConfig.NUM_LANES) return null;
+        
         Enemy furthest = null;
         int furthestX = Integer.MAX_VALUE;
+        
+        // Scan all enemies to find the one closest to the base in THIS specific lane
         for (Enemy e : getWorld().getObjects(Enemy.class)) {
-            if (e.getLaneIndex() == laneToCheck && !e.isDead() && e.getX() < furthestX) {
-                furthest = e;
-                furthestX = e.getX();
+            if (e.getLaneIndex() == laneToCheck && !e.isDead()) {
+                if (e.getX() < furthestX) {
+                    furthest = e;
+                    furthestX = e.getX();
+                }
             }
         }
         return furthest;
     }
+    /** 
+     * Overriding findTarget so the Basic Unit "wakes up" if an enemy 
+     * is in ANY of its valid lanes (Own, Top, or Bottom).
+     */
+    @Override
+    protected Enemy findTarget() {
+        // If Level 1, only look at our own lane (standard behavior)
+        if (level < GameConfig.BASIC_SWARM_UNLOCK) {
+            return super.findTarget();
+        }
+    
+        // If Level 2+, we scan all 3 lanes to see if we should start firing
+        Enemy bestTarget = null;
+        int closestX = Integer.MAX_VALUE;
+    
+        // Scan Lane-1, Lane, and Lane+1
+        for (int offset = -1; offset <= 1; offset++) { 
+            int checkLane = laneIndex + offset;
+            
+            // Safety check to stay inside world lanes (0-4)
+            if (checkLane >= 0 && checkLane < GameConfig.NUM_LANES) {
+                Enemy e = findTargetInLane(checkLane);
+                if (e != null && e.getX() < closestX) {
+                    closestX = e.getX();
+                    bestTarget = e;
+                }
+            }
+        }
+        
+        // If this returns an enemy, updateBehavior will trigger the attack() method
+        return bestTarget; 
+    }
     
     public int getStackCount() { return stackCount; }
+    
     @Override protected int getBaseHPFromConfig() { return GameConfig.BASIC_UNIT_HP; }
     
+    @Override
+    public boolean isSelfRaged() {
+        return isRaged;
+    }
 }
