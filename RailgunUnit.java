@@ -63,7 +63,7 @@ public class RailgunUnit extends Unit {
                 
                 // Add tiny "CLICK" text at the bottom edge of the unit
                 baseImg.setFont(new Font("SansSerif", true, false, 11));
-                baseImg.drawString("CLICK", 2, h - 2);
+                baseImg.drawString("CHARGED", 2, h - 2);
                 
                 // Highlight the whole gun frame
                 baseImg.drawRect(0, 0, w-1, h-1);

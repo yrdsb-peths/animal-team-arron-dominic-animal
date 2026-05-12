@@ -92,15 +92,24 @@ public abstract class Unit extends Actor {
         if (level >= GameConfig.MAX_UNIT_LEVEL) return;
         level++;
         
-        // Exponential Scaling
-        this.maxHealth = (int)(maxHealth * GameConfig.LEVEL_HP_MULT);
+        float hpMult = GameConfig.LEVEL_HP_MULT;
+        float dmgMult = GameConfig.LEVEL_DMG_MULT;
+
+        // Apply the Level 4 Spike!
+        if (level == 4) {
+            hpMult = GameConfig.LVL_4_STAT_SPIKE_HP;
+            dmgMult = GameConfig.LVL_4_STAT_SPIKE_DMG;
+            getWorld().addObject(new FloatingText("STAT SURGE!", Color.ORANGE, 45), getX(), getY() - 20);
+        }
+
+        this.maxHealth = (int)(maxHealth * hpMult);
         this.health = maxHealth;
         
-        double currentCD = attackCooldown.getTotalFrames() / 60.0;
-        attackCooldown.setDuration(currentCD * GameConfig.LEVEL_COOLDOWN_MULT);
-        
-        updateVisual(); // Now this works!
-        
+        // Note: Damage scaling depends on how your specific unit handles bullets
+        // Most use: baseDamage * Math.pow(LEVEL_DMG_MULT, level-1)
+        // Ensure your attack() methods pull the current level!
+
+        updateVisual(); 
         getWorld().addObject(new FloatingText("LVL " + level, UnitVisuals.getLevelColor(level), 30), getX(), getY());
     }
     

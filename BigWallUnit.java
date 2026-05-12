@@ -4,9 +4,10 @@ public class BigWallUnit extends WallUnit {
 
     public BigWallUnit(int laneIndex, int colIndex) {
         super(laneIndex, colIndex);
-        // Use BigWall specific base HP
-        this.health = GameConfig.BIG_WALL_UNIT_HP;
-        this.maxHealth = health;
+        int baseHp = GameConfig.BIG_WALL_UNIT_HP; 
+        this.maxHealth = (int)(baseHp * Math.pow(GameConfig.LEVEL_HP_MULT, level - 1));
+        this.health = this.maxHealth;
+        
         updateVisual();
     }
 
@@ -137,6 +138,37 @@ public class BigWallUnit extends WallUnit {
 
         setImage(img);
         setNormalImage(img);
+    }
+    
+    @Override
+    protected void updateBehavior(MyWorld world) {
+        super.updateBehavior(world);
+        
+        // LEVEL 4: AUTO-HEAL
+        if (level >= GameConfig.WALL_HEAL_UNLOCK) {
+            healTimer.update(world);
+            if (healTimer.isExpired() && health < maxHealth) {
+                int healAmt = (int)(maxHealth * 0.03); 
+                health = Math.min(maxHealth, health + healAmt);
+                
+                // --- THE GREAT HEAL ANIMATION ---
+                // 1. Spawn the structural pulse
+                int w = getImage().getWidth();
+                int h = getImage().getHeight();
+                world.addObject(new WallHealPulse(w, h), getX(), getY());
+                
+                // 2. Spawn Repair Bits (more for Big Wall, fewer for Small)
+                int bitCount = (this instanceof BigWallUnit) ? 8 : 4;
+                for(int i=0; i < bitCount; i++) {
+                    // Spawn them at the base of the wall
+                    int rx = getX() + (GameRNG.getRandomNumber(w) - w/2);
+                    int ry = getY() + (h/2);
+                    world.addObject(new RepairBit(), rx, ry);
+                }
+                
+                updateVisual(); 
+            }
+        }
     }
     
     

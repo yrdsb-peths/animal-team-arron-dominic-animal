@@ -41,7 +41,6 @@ public class SuperLaser extends Actor {
         // PHASE 2: THE BLAST
         else if (timer == chargeTime) {
             world.startShake(blastTime + fadeTime, 20); // MASSIVE Shake
-            world.addObject(new FloatingText("ION CANNON FIRED!", Color.CYAN, 40), world.getWidth()/2, getY() - 50);
             dealDamage(world);
             updateVisualBlast(255);
         } 

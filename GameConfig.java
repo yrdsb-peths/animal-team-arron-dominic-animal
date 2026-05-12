@@ -117,9 +117,9 @@ public class GameConfig {
     public static final double SNIPER_UNIT_COOLDOWN = 3.0; // Shoots slow
     public static final int SNIPER_UNIT_DAMAGE = 120;       // Hits very hard
     public static final int SNIPER_SLOW_RADIUS = s(120);
-    public static final int SNIPER_ICE_KILL_UNLOCK = 4;
     // Damage = (Enemy Max HP * 0.4) + Flat 100. High HP enemies make BIGGER bombs.
     public static final float SNIPER_ICE_EXPLODE_MULT = 0.4f; 
+    public static final float SNIPER_FREEZE_WEAKNESS = 0.5f;
     public static final int SNIPER_ICE_EXPLODE_RADIUS = s(160);
     public static final int SNIPER_ICE_STAGING_TIME = 20; // Time to turn into crystal (was 40)
     public static final int SNIPER_ICE_PRESSURE_TIME = 20; // Time spent shivering before boom (was 80)
@@ -128,9 +128,7 @@ public class GameConfig {
     public static final int RAILGUN_UNIT_HP = 5;
     public static final double RAILGUN_UNIT_COOLDOWN = 2.0; // Shoots slow, but clears waves
     public static final int RAILGUN_UNIT_DAMAGE = 50;
-    public static final int RAILGUN_TRAIL_UNLOCK       = 2;    // Leaves a burning line
     public static final int RAILGUN_TRAIL_DAMAGE       = 25;   // Damage per half-second
-    public static final int RAILGUN_SUPER_LASER_UNLOCK = 5;    // Manual Click Ultimate!
     public static final double RAILGUN_SUPER_LASER_CD  = 30.0; // 30 seconds cooldown!
     public static final int RAILGUN_SUPER_LASER_DMG    = 25000;// Absolutely 
     
@@ -138,12 +136,13 @@ public class GameConfig {
     public static final int ALCHEMIST_UNIT_HP = 4;
     public static final double ALCHEMIST_UNIT_COOLDOWN = 4.0; 
     public static final int ALCHEMIST_UNIT_DAMAGE = 70; // High impact damage
+    public static final float ALCHEMIST_DMG_AMP = 1.5f; 
     
     public static final int WALL_UNIT_COST = 50;
-    public static final int WALL_UNIT_HP = 20;
+    public static final int WALL_UNIT_HP = 40;
     
     public static final int BIG_WALL_UNIT_COST = 500;
-    public static final int BIG_WALL_UNIT_HP = 200;
+    public static final int BIG_WALL_UNIT_HP = 400;
     
     public static final int COWARD_UNIT_COST = 75;    // Very cheap!
     public static final int COWARD_UNIT_HP = 1;       // Dies instantly if caught off guard
@@ -154,30 +153,35 @@ public class GameConfig {
     // ── UNIT ABILITY UNLOCKS & STATS ────────────────────────────────────────
     // ========================================================================
     
-    // --- BASIC UNIT ---
-    public static final int BASIC_SWARM_UNLOCK         = 2;    // Fires at adjacent lanes
-    public static final int BASIC_RAGE_UNLOCK          = 3;    // +50% Fire Rate when enemies are close
-    public static final int BASIC_DOMAIN_UNLOCK        = 5;    // Commander Domain (Buffs nearby units)
-    
-    // --- ALCHEMIST UNIT ---
-    public static final int ALCHEMIST_CORROSIVE_UNLOCK = 2;    // Puddles melt armor
-    public static final int ALCHEMIST_STICKY_UNLOCK    = 3;    // Puddles Slow enemies 50%
-    public static final int ALCHEMIST_CONTAGION_UNLOCK = 4;    // Dead enemies spawn puddles
-    public static final float ALCHEMIST_DMG_AMP        = 1.5f; // Take 50% more damage
-    
-    // --- SNIPER UNIT ---
-    public static final int SNIPER_DEBUFF_UNLOCK       = 2;    // Enemies deal less damage
-    public static final float SNIPER_FREEZE_WEAKNESS   = 0.5f; // Deals 50% damage while frozen
+    // BASIC: L2 Swarm, L3 Rage, L5 Domain
+    public static final int BASIC_SWARM_UNLOCK   = 2;
+    public static final int BASIC_RAGE_UNLOCK    = 3;
+    public static final int BASIC_DOMAIN_UNLOCK  = 5; 
+
+    // SNIPER: L2 Debuff, L3 Enhanced Slow, L5 Ice Statue
+    public static final int SNIPER_DEBUFF_UNLOCK    = 2;
+    public static final int SNIPER_ICE_KILL_UNLOCK  = 5; // Moved from 4 to 5
+
+    // ALCHEMIST: L2 Corrosive, L3 Sticky, L5 Contagion
+    public static final int ALCHEMIST_CORROSIVE_UNLOCK = 2;
+    public static final int ALCHEMIST_STICKY_UNLOCK    = 3;
+    public static final int ALCHEMIST_CONTAGION_UNLOCK = 5; // Moved from 4 to 5
+
+    // RAILGUN: L2 Trail, L5 Ion Cannon
+    public static final int RAILGUN_TRAIL_UNLOCK       = 2;
+    public static final int RAILGUN_SUPER_LASER_UNLOCK = 5;
+
   
     // --- WALL UNITS ---
     public static final int WALL_THORNS_UNLOCK         = 2; 
-    public static final int WALL_HEAL_UNLOCK           = 4;    // Auto-heals 3% HP every second
-    public static final int WALL_EXPLODE_UNLOCK        = 5;    // Explodes on death
+    public static final int WALL_HEAL_UNLOCK           = 5;    // Auto-heals 3% HP every second
+    public static final int WALL_HEALING_AMOUNT        = 3;//%
+    public static final int WALL_EXPLODE_UNLOCK        = 3;    // Explodes on death
     public static final float WALL_THORN_MULTIPLIER    = 1.0f; // Reflect 100% of damage
     public static final int WALL_THORN_BASE_DMG        = 20;   // Minimum damage dealt back
     
     // --- BIG WALL UNITS ---
-    public static final int BIG_WALL_EXPLODE_UNLOCK    = 4;    // Explodes on death
+    public static final int BIG_WALL_EXPLODE_UNLOCK    = 3;    // Explodes on death
     public static final int BIG_WALL_IMMUNE_UNLOCK     = 5;    // Immune to Calamities
     
     // --- COWARD UNIT ---
@@ -195,6 +199,10 @@ public class GameConfig {
     public static final float LEVEL_DMG_MULT      = 4.0f;  
     public static final float LEVEL_COOLDOWN_MULT = 0.85f; 
     public static final float LEVEL_VISUAL_SCALE  = 0.12f; 
+    
+    // THE LEVEL 4 SPIKE: When upgrading to Lvl 4, multiply stats by this instead!
+    public static final float LVL_4_STAT_SPIKE_HP  = 3.5f; 
+    public static final float LVL_4_STAT_SPIKE_DMG = 4.0f; 
 
     // --- 2. ECONOMY: THE HEAVY COST OF POWER ---
     // Placement Cost = Base * (PLACEMENT_COST_MULT ^ (Level - 1))

@@ -17,8 +17,10 @@ public class MyWorld extends World {
        
         // Define the layer order (first = on top, last = at bottom)
         setPaintOrder(
-                    DomainExpansion.class,  // The L5 Basic Unit's pulse
+            DomainExpansion.class,  // The L5 Basic Unit's pulse
             UpgradeCard.class,      // SHOP CARDS ON TOP
+            RepairBit.class,      // Tiny bits fly over the wall
+            WallHealPulse.class,  // The glow effect
             BossIntroOverlay.class, // Cinemtatics on very top
             FloatingText.class,     // Damage/Money popups
             Explosion.class,        // Big fiery blasts should cover everything
