@@ -113,7 +113,7 @@ public class WaveManager {
      * @param waveNum  The wave being built (starts at 1).
      */
     private void buildWave(int waveNum) {
-        int enemyCount = 3 + (int)(waveNum * GameConfig.DIFF_QUANTITY_GROWTH);
+        int enemyCount = Math.min(GameConfig.MAX_ENEMY_COUNT, 3 + (int)(waveNum * GameConfig.DIFF_QUANTITY_GROWTH));
 
         for (int i = 0; i < enemyCount; i++) {
             int lane = GameRNG.getRandomNumber(GameConfig.NUM_LANES);

@@ -546,7 +546,9 @@ public class UnitVisuals {
         int center = size / 2;
         long t = System.currentTimeMillis();
         GreenfootImage img = new GreenfootImage(size, size);
-        
+        if (isScared) { 
+            img.setColor(new Color(130, 80, 30)); img.fillOval(5, size - 10, size - 10, 10); return img; 
+        }
         // THE COWARD SHIVER: Constant vibration
         int shakeX = Greenfoot.getRandomNumber(3) - 1;
         int shakeY = Greenfoot.getRandomNumber(3) - 1;

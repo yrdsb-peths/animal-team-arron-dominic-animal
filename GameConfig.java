@@ -301,7 +301,7 @@ public class GameConfig {
     
     // ── DYNAMIC DIFFICULTY SCALING ──────────────────────────────────────────
     // Higher numbers = Much harder game.
-    
+    public static final int MAX_ENEMY_COUNT = 40;
     /** How much Enemy HP increases per wave (0.10 = +10% per wave) */
     public static final float  DIFF_HP_GROWTH       = 0.10f;
     
@@ -312,10 +312,10 @@ public class GameConfig {
     public static final double DIFF_QUANTITY_GROWTH = 3.5;
     
     /** How much faster enemies spawn per wave (0.12 seconds faster every wave) */
-    public static final double DIFF_PACE_SPEEDUP    = 0.12;
+    public static final double DIFF_PACE_SPEEDUP    = 0.2;
     
     /** The fastest enemies are allowed to spawn (don't set to 0 or game crashes!) */
-    public static final double MIN_SPAWN_INTERVAL   = 0.2;
+    public static final double MIN_SPAWN_INTERVAL   = 0.1;
     
     
     // ── ENEMY VARIETY SCALING ────────────────────────────────────────────────

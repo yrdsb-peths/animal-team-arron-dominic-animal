@@ -17,7 +17,7 @@ public class MenuState implements GameState {
         int midY = world.getHeight() / 2;
 
         // Title
-        addUI(world, new UIText("MY GAME", GameConfig.s(60), Color.WHITE),
+        addUI(world, new UIText("TOWER DEFENSE", GameConfig.s(60), Color.WHITE),
               midX, midY - GameConfig.s(80));
 
         // High score display
