@@ -23,6 +23,7 @@ public abstract class Enemy extends Actor {
     
     protected int baseDrop;
     protected int spawnWave = 1;
+    protected int maxHealth; 
     
     protected GameTimer attackTimer;
 
@@ -177,6 +178,13 @@ public abstract class Enemy extends Actor {
         if (!isDead) {
             isDead = true;
             MyWorld world = (MyWorld)getWorld();
+            
+            // --- NEW: LEVEL 4 SNIPER LOGIC ---
+            if (markedForIceStatue) {
+                world.addObject(new IceStatue(new GreenfootImage(getImage()), maxHealth), getX(), getY());
+                world.removeObject(this);
+                return; // Skip normal death rewards for now, statue handles it
+            }
     
             /// LEVEL 4: CONTAGION
             if (this.damageTakenMultiplier > 1.0f) {
@@ -220,6 +228,12 @@ public abstract class Enemy extends Actor {
         super.setLocation(x, y);
         this.exactX = x;
         this.exactY = y;
+    }
+    
+    protected boolean markedForIceStatue = false;
+
+    public void markForIceKill() {
+        this.markedForIceStatue = true;
     }
 
 }

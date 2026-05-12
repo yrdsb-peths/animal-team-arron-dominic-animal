@@ -51,23 +51,32 @@ public class BasicUnit extends Unit {
                     domainRestTimer.start();
                 }
         
-                // PHASE 3: Tick the rest timer
+                /// PHASE 3: Tick the rest timer
                 domainRestTimer.update(world);
-        
+            
                 if (domainRestTimer.isExpired()) {
                     domainIsReady = true;
                 }
-        
-                // PHASE 4: If rested and ready, check for enemies to trigger
+            
+                // PHASE 4: Trigger Logic
                 if (domainIsReady) {
+                    // A. Check for enemy (The "Panic" Trigger)
                     boolean enemyNearby = !getObjectsInRange(GameConfig.s(150), Enemy.class).isEmpty();
-                    if (enemyNearby) {
+                    
+                    // B. Check the 10-second timer (The "Automatic" Trigger)
+                    domainTimer.update(world);
+            
+                    if (enemyNearby || domainTimer.isExpired()) {
                         myDomain = new DomainExpansion(GameConfig.s(160));
                         world.addObject(myDomain, getX(), getY());
                         
-                        // Reset the rest timer for the next cycle
+                        // Clean up for next cycle
                         domainRestTimer.reset(); 
+                        domainTimer.reset(); // Reset the 10s automatic timer
                         domainIsReady = false;
+                        
+                        if (enemyNearby) System.out.println("!!! DOMAIN: TRIGGERED BY ENEMY");
+                        else System.out.println("!!! DOMAIN: TRIGGERED AUTOMATICALLY");
                     }
                 }
             }

@@ -46,6 +46,10 @@ public class Projectile extends Actor {
 
         // Inside Projectile.act()
         if (intersects(target)) {
+            boolean isSniperShot = (payload instanceof SlowEffect);
+            if (isSniperShot && target.health <= damage && GameConfig.DEBUG_MODE) { // Use your level check here
+                 target.markForIceKill();
+            }
             // 1. Determine if this specific hit ignores shields
             // Check A: Is it a backstab?
             boolean backstabHit = (getX() > target.getX());

@@ -116,7 +116,13 @@ public class GameConfig {
     public static final int SNIPER_UNIT_HP = 8;
     public static final double SNIPER_UNIT_COOLDOWN = 3.0; // Shoots slow
     public static final int SNIPER_UNIT_DAMAGE = 120;       // Hits very hard
-     public static final int SNIPER_SLOW_RADIUS = s(120);
+    public static final int SNIPER_SLOW_RADIUS = s(120);
+    public static final int SNIPER_ICE_KILL_UNLOCK = 4;
+    // Damage = (Enemy Max HP * 0.4) + Flat 100. High HP enemies make BIGGER bombs.
+    public static final float SNIPER_ICE_EXPLODE_MULT = 0.4f; 
+    public static final int SNIPER_ICE_EXPLODE_RADIUS = s(160);
+    public static final int SNIPER_ICE_STAGING_TIME = 20; // Time to turn into crystal (was 40)
+    public static final int SNIPER_ICE_PRESSURE_TIME = 20; // Time spent shivering before boom (was 80)
      
     public static final int RAILGUN_UNIT_COST = 200;
     public static final int RAILGUN_UNIT_HP = 5;
