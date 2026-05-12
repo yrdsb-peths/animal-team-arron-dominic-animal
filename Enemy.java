@@ -186,12 +186,17 @@ public abstract class Enemy extends Actor {
                 return; // Skip normal death rewards for now, statue handles it
             }
     
-            /// LEVEL 4: CONTAGION
+            /// ALCHEMIST LVL 5 CONTAGION
             if (this.damageTakenMultiplier > 1.0f) {
-                 // Pass '4' so the puddle inherits the Sticky/Corrosive traits!
-                 world.addObject(new DamagePuddle(4.0, 10, 4), getX(), getY());
-                 world.addObject(new FloatingText("CONTAGION", Color.GREEN, 15), getX(), getY());
+                 // FIX: Ensure the Alchemist is actually Level 5 before triggering this!
+                 int alchLevel = UnitRegistry.getById(4).level; // 4 is Alchemist ID
+                 if (alchLevel >= GameConfig.ALCHEMIST_CONTAGION_UNLOCK) {
+                     // Pass level 5 to inherit max traits
+                     world.addObject(new DamagePuddle(4.0, 10, 5), getX(), getY());
+                     world.addObject(new FloatingText("CONTAGION", Color.GREEN, 15), getX(), getY());
+                 }
             }
+
             
             // 1. Calculate Wave Scaling (LINEAR FORMULA)
             double dropGrowthRate = GameConfig.ENEMY_DROP_GROWTH_PCT / 100.0;

@@ -194,14 +194,14 @@ public class GameConfig {
     // --- 1. PLAYER POWER SPIKES (The "Grace Period" Creators) ---
     public static final int MAX_UNIT_LEVEL = 5;
     // Base ^ (Level-1). 
-    public static final float LEVEL_HP_MULT       = 2.5f;  
+    public static final float LEVEL_HP_MULT       = 2.2f;  
     public static final float LEVEL_DMG_MULT      = 2.5f;  
-    public static final float LEVEL_COOLDOWN_MULT = 0.85f; 
-    public static final float LEVEL_VISUAL_SCALE  = 0.12f; 
+    public static final float LEVEL_COOLDOWN_MULT = 0.90f; 
     
     // THE LEVEL 4 SPIKE: When upgrading to Lvl 4, multiply stats by this instead!
-    public static final float LVL_4_STAT_SPIKE_HP  = 3.5f; 
-    public static final float LVL_4_STAT_SPIKE_DMG = 4.0f; 
+    public static final float LVL_4_STAT_SPIKE_HP  = 3.0f; 
+    public static final float LVL_4_STAT_SPIKE_DMG = 3.5f;
+    public static final float LEVEL_VISUAL_SCALE  = 0.12f; 
 
     // --- 2. ECONOMY: THE HEAVY COST OF POWER ---
     // Placement Cost = Base * (PLACEMENT_COST_MULT ^ (Level - 1))

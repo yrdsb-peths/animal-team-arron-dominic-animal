@@ -350,17 +350,39 @@ public class WaveManager {
                 default:           e = new BasicEnemy(); break; 
             }
             
-            // --- NEW: COMPOUNDING ENEMY SCALING ---
-            // Formula: (1 + Percentage/100) ^ WaveNum
-            // Change Linear Scaling to Exponential Scaling
-            // --- THE BALANCED LINEAR FORMULA ---
-            double hpRate = GameConfig.ENEMY_HP_GROWTH_PCT / 100.0;
-            double dmgRate = GameConfig.ENEMY_DMG_GROWTH_PCT / 100.0;
-            
-            // Enemy HP = 100 + (100 * 1.5 * Wave)
-            double hpMult = 1.0 + (hpRate * Math.min(1,waveNum-5));
-            double dmgMult = 1.0 + (dmgRate * Math.min(1,waveNum-5));
-            
+            // --- TRUE TIERED SCALING FOR WAVE 100 ROADMAP ---
+            double hpMult = 1.0;
+            double dmgMult = 1.0;
+
+            if (waveNum <= 20) {
+                // TIER 1 (Waves 1-20): Gentle Linear. Lets Lvl 1 & 2 units shine.
+                hpMult = 1.0 + (waveNum * 0.4); 
+                dmgMult = 1.0 + (waveNum * 0.2);
+            } 
+            else if (waveNum <= 50) {
+                // TIER 2 (Waves 21-50): Mild Exponential. Forces Lvl 3 upgrades.
+                // Starts where Tier 1 left off (~9.0x) and grows gently.
+                hpMult = 9.0 * Math.pow(1.08, waveNum - 20);
+                dmgMult = 5.0 + (waveNum * 0.4);
+            } 
+            else if (waveNum <= 80) {
+                // TIER 3 (Waves 51-80): Aggressive Exponential. Forces Lvl 4 Spike.
+                // Starts where Tier 2 left off (~90x).
+                hpMult = 90.0 * Math.pow(1.12, waveNum - 50);
+                dmgMult = 15.0 + (waveNum * 1.0);
+            } 
+            else {
+                // TIER 4 (Waves 81-100+): The Endgame. Demands Level 5 and Abilities.
+                // Starts where Tier 3 left off (~2700x).
+                hpMult = 2700.0 * Math.pow(1.18, waveNum - 80);
+                dmgMult = 45.0 + (waveNum * 2.0);
+            }
+
+            // Slimes always get 2.5x more HP than whatever the current multiplier is
+            if (type == SLIME) {
+                hpMult *= 2.5; 
+            }
+
             e.scaleStats((float)hpMult, (float)dmgMult, waveNum);
             
             // --- NEW: APPLY ELITE BUFFS ---
