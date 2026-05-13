@@ -46,7 +46,8 @@ public class WaveManager {
 
     /** Gold awarded to the player each time a wave is cleared. */
     private static final int WAVE_CLEAR_BONUS    = GameConfig.WAVE_CLEAR_BONUS;
-
+    
+    private CampaignManager.LevelConfig levelConfig;
 
     // ─────────────────────────────────────────────────────────────────────────
     // STATE
@@ -113,54 +114,27 @@ public class WaveManager {
      * @param waveNum  The wave being built (starts at 1).
      */
     private void buildWave(int waveNum) {
-        int enemyCount = Math.min(GameConfig.MAX_ENEMY_COUNT, 3 + (int)(waveNum * GameConfig.DIFF_QUANTITY_GROWTH));
-
+        // Shorter, tightly controlled spawn pool!
+        int enemyCount = 3 + (waveNum * 2) + (levelConfig.id * 2);
+    
         for (int i = 0; i < enemyCount; i++) {
             int lane = GameRNG.getRandomNumber(GameConfig.NUM_LANES);
-            //Forced Wave
-            if (forcedEnemyType != -1) {
-                if (forcedEnemyType == EnemySpawn.RUMBLING_MIX) {
-                    // The Evil Combo: Roll between Kamikaze and Shield
-                    int type = (GameRNG.getRandomNumber(100) < GameConfig.RUMBLING_BOMBER_CHANCE) 
-                                ? EnemySpawn.KAMIKAZE 
-                                : EnemySpawn.SHIELD;
-                    spawnQueue.add(new EnemySpawn(type, lane));
-                } else {
-                    // Normal forced wave (e.g. 100% Kamikaze for Stampede)
-                    spawnQueue.add(new EnemySpawn(forcedEnemyType, lane));
-                }
-                continue; // Skip all the random rolls below!
-            }
             int roll = GameRNG.getRandomNumber(100);
-
-            // Calculate current chances
-            int tankChance    = (waveNum >= GameConfig.TANK_WAVE_MIN)    ? Math.min(GameConfig.TANK_CHANCE_MAX, GameConfig.TANK_CHANCE_START + (waveNum * GameConfig.TANK_CHANCE_GROWTH)) : -1;
-            int slimeChance   = (waveNum >= GameConfig.SLIME_WAVE_MIN)   ? Math.min(GameConfig.SLIME_CHANCE_MAX, GameConfig.SLIME_CHANCE_START + (waveNum * GameConfig.SLIME_CHANCE_GROWTH)) : -1;
-            int shieldChance  = (waveNum >= GameConfig.SHIELD_WAVE_MIN)  ? Math.min(GameConfig.SHIELD_CHANCE_MAX, GameConfig.SHIELD_CHANCE_START + (waveNum * GameConfig.SHIELD_CHANCE_GROWTH)) : -1;
-            int KAMIKAZEChance = (waveNum >= GameConfig.KAMIKAZE_WAVE_MIN) ? Math.min(GameConfig.KAMIKAZE_CHANCE_MAX, GameConfig.KAMIKAZE_CHANCE_START + (waveNum * GameConfig.KAMIKAZE_CHANCE_GROWTH)) : -1;
-
-            // ONE CHAIN TO RULE THEM ALL
-            // If you set SLIME_CHANCE_START to 100, the first 'if' will always trigger,
-            // and the 'else if' blocks below it will be skipped.
-            if (slimeChance > 0 && roll < slimeChance) {
+    
+            if (levelConfig.spawnSlime && roll < 5) {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.SLIME, lane));
-            } 
-            else if (shieldChance > 0 && roll < shieldChance) {
+            } else if (levelConfig.spawnShield && roll < 15) {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.SHIELD, lane));
-            } 
-            else if (KAMIKAZEChance > 0 && roll < KAMIKAZEChance) {
+            } else if (levelConfig.spawnKamikaze && roll < 25) {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.KAMIKAZE, lane));
-            } 
-            else if (tankChance > 0 && roll < tankChance) {
+            } else if (roll < 40) {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.TANK, lane));
-            } 
-            else {
-                // If nothing else rolls successfully, it's a Basic Enemy
+            } else {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.BASIC, lane));
             }
         }
-        forcedEnemyType = -1; 
     }
+
 
     // ─────────────────────────────────────────────────────────────────────────
     // PER-FRAME UPDATE — call this from PlayingState.update() every frame
@@ -241,26 +215,24 @@ public class WaveManager {
 
     /** Switches to break mode, awards the wave-clear gold bonus. */
     private void triggerWaveBreak(MyWorld world) {
-        waveInProgress  = false;
+        waveInProgress = false;
+        
+        // Check if they beat the level!
+        if (currentWave >= levelConfig.maxWaves) {
+            world.getGSM().changeState(new VictoryState(levelConfig.id));
+            return;
+        }
+        
         waitingForBreak = true;
         waveBreakTimer.reset();
         waveBreakTimer.start();
-
-        // 1. Base Clear Bonus
-        CurrencyManager.earn(WAVE_CLEAR_BONUS + currentWave * 2);
-        ScoreManager.addScore(currentWave*50); 
-
-        // 2. INTEREST (The Greed Mechanic!)
-        int interest = (int)(CurrencyManager.getGold() * GameConfig.INTEREST_RATE);
-        if (interest > 0) {
-            CurrencyManager.earn(interest);
-            
-            // Spawn HUGE text in the middle of the screen
-            String msg = "WAVE CLEARED!\nInterest Earned: +$" + interest;
-            world.addObject(new FloatingText(msg, Color.YELLOW, 180), world.getWidth() / 2, world.getHeight() / 2);
-        }
+        
+        CurrencyManager.earn(GameConfig.WAVE_CLEAR_BONUS + currentWave * 5);
+        
+        // Reward Permanent Tech Points for clearing a wave!
+        SaveManager.addTechPoints(1);
     }
-    
+        
     public void replaceCurrentWave(int enemyType, double countMultiplier, double customSpawnInterval, boolean isElite) {
         this.currentWave++;           // Treat this as a brand new wave
         this.waveInProgress = true;   // Force the spawning state to ON
@@ -396,6 +368,10 @@ public class WaveManager {
         }
     }
     
+    public void setLevel(CampaignManager.LevelConfig config) {
+        this.levelConfig = config;
+    }
+
     public void debugSkipToWave(int targetWave) {
         // Ensure we don't go below 1
         this.currentWave = Math.max(1, targetWave - 1); 

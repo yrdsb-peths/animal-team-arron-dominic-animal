@@ -191,22 +191,24 @@ public class GameConfig {
     // ── THE DIFFICULTY ENGINE (EASY BALANCING KNOBS) ────────────────────────
     // ========================================================================
 
-    // --- 1. PLAYER POWER SPIKES (The "Grace Period" Creators) ---
-    public static final int MAX_UNIT_LEVEL = 5;
-    // Base ^ (Level-1). 
-    public static final float LEVEL_HP_MULT       = 3.2f;  
-    public static final float LEVEL_DMG_MULT      = 4.0f;  
+       
+    public static final int MAX_UNIT_LEVEL = 4; // Capped at 4 (3 ability upgrades)
+    
+    // --- SQUISHED STAT MULTIPLIERS (Much flatter curve) ---
+    public static final float LEVEL_HP_MULT       = 1.5f;  // Used to be 3.2f
+    public static final float LEVEL_DMG_MULT      = 1.4f;  // Used to be 4.0f
     public static final float LEVEL_COOLDOWN_MULT = 0.90f; 
     
-    // THE LEVEL 4 SPIKE: When upgrading to Lvl 4, multiply stats by this instead!
-    public static final float LVL_4_STAT_SPIKE_HP  = 5.0f; 
-    public static final float LVL_4_STAT_SPIKE_DMG = 5.5f;
+    public static final float LVL_4_STAT_SPIKE_HP  = 2.0f; // Used to be 5.0f
+    public static final float LVL_4_STAT_SPIKE_DMG = 1.8f; // Used to be 5.5f
+    
+    // --- IN-MATCH ECONOMY ---
+    public static final float PLACEMENT_COST_MULT = 1.3f; // Gradual cost increase
+    
+    // --- PERMANENT META-PROGRESSION (Costs in TECH POINTS) ---
+    public static final int[] TECH_UPGRADE_COSTS = {0, 5, 10, 20, 0}; // Cost to go to L2, L3, L4 
+
     public static final float LEVEL_VISUAL_SCALE  = 0.12f; 
-
-    // --- 2. ECONOMY: THE HEAVY COST OF POWER ---
-    // Placement Cost = Base * (PLACEMENT_COST_MULT ^ (Level - 1))
-    public static final float PLACEMENT_COST_MULT = 2.5f;  
-
     // Upgrade Cost = Base * UPGRADE_BASE_MULT * (UPGRADE_EXP_MULT ^ (Level - 1))
     // Example Sniper ($100): L2=$1,000 | L3=$3,000 | L4=$9,000 | L5=$27,000
     public static final float UPGRADE_COST_BASE_MULT = 10f; 

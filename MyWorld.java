@@ -17,7 +17,7 @@ public class MyWorld extends World {
        
         // Define the layer order (first = on top, last = at bottom)
         setPaintOrder(
-            DomainExpansion.class,  // The L5 Basic Unit's pulse
+           
             UpgradeCard.class,      // SHOP CARDS ON TOP
             RepairBit.class,      // Tiny bits fly over the wall
             WallHealPulse.class,  // The glow effect
@@ -27,6 +27,7 @@ public class MyWorld extends World {
             HealEffect.class,       // Floating "+" signs
             FrostPulse.class,       // Sniper's ice blast
             BlockSpark.class,       // Shield/Thorn sparks
+            DomainExpansion.class,  // The L5 Basic Unit's pulse
             BlockSpark.class,
             UIText.class,           // UI Text
             ShopBackground.class,   // SHOP COLOR BLOCK

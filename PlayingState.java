@@ -11,7 +11,14 @@ public class PlayingState implements GameState {
 
     private WaveManager waveManager;
     private PlacementManager placementManager;
-    private Base base; // Store reference to Base to show lives
+    private Base base; 
+    private CampaignManager.LevelConfig levelConfig;
+    private int levelId;
+
+    public PlayingState(int levelId) {
+        this.levelId = levelId;
+        this.levelConfig = CampaignManager.getLevel(levelId);
+    }
 
     @Override
     public void enter(MyWorld world) {
@@ -19,53 +26,45 @@ public class PlayingState implements GameState {
         ScoreManager.reset();
         sessionStartTime = System.currentTimeMillis();
         
-        UnitRegistry.resetLevels(); // Resets tech tree for this match
-        // 1. Setup Background with a visual separator
+        UnitRegistry.loadLevels(); // Ensure units are at their saved tech levels
+        
         GreenfootImage bg = new GreenfootImage(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
-        bg.setColor(new Color(30, 30, 50)); // Dark background
+        bg.setColor(new Color(30, 30, 50)); 
         bg.fill();
-        // Draw the "Ground" line at Y=500 to separate UI from Game
         bg.setColor(Color.BLACK);
         bg.fillRect(0, GameConfig.PLAYABLE_HEIGHT, world.getWidth(), 5); 
         world.setBackground(bg);
     
-        // 2. Spawn Base (Only as tall as the PLAYABLE area, not the whole world!)
         base = new Base();
         GreenfootImage baseImg = new GreenfootImage(50, GameConfig.PLAYABLE_HEIGHT);
         baseImg.setColor(Color.BLUE);
         baseImg.fillRect(0, 0, 50, GameConfig.PLAYABLE_HEIGHT);
         base.setImage(baseImg);
-        // Center it vertically in the top 500 pixels
         world.addObject(base, GameConfig.BASE_X, GameConfig.PLAYABLE_HEIGHT / 2);
     
-        // 3. Initialize Managers
         LaneManager.reset();
         CurrencyManager.reset();
         CalamityManager.reset();
+        
+        // Pass the level rules into WaveManager
         waveManager = new WaveManager();
-        placementManager = new PlacementManager();
-    
-        // 4. Start the game logic
+        waveManager.setLevel(levelConfig); 
         waveManager.startFirstWave();
+        
+        placementManager = new PlacementManager();
         GameConfig.GAME_SPEED = 1;
     
-        // 5. TOP UI (Wave/Gold)
-        waveDisplay = new UIText("WAVE: 1", GameConfig.s(22), Color.WHITE);
+        waveDisplay = new UIText("WAVE: 1 / " + levelConfig.maxWaves, GameConfig.s(22), Color.WHITE);
         goldDisplay = new UIText("GOLD: " + GameConfig.formatNumber(CurrencyManager.getGold()), GameConfig.s(22), Color.YELLOW);
         world.addObject(waveDisplay, GameConfig.s(90), GameConfig.s(20));
         world.addObject(goldDisplay, GameConfig.s(300), GameConfig.s(20));
         uiElements.add(waveDisplay);
         uiElements.add(goldDisplay);
     
-        // 6. BOTTOM UI TRAY (Ability Buttons & Speed)
-        // We use the new UI_TRAY_Y (e.g., 550) to center them in the bottom tray
         int trayY = GameConfig.UI_TRAY_Y;
         int btnSpacing = GameConfig.s(175);
         int startX = GameConfig.s(220);
         
-        
-        world.addObject(new UIText("[S] OPEN SHOP", 16, Color.CYAN), world.getWidth() - GameConfig.s(120), GameConfig.UI_TRAY_Y - 30);
-    
         AbilityButton btn1 = new AbilityButton(1, "OVERCLOCK", GameConfig.OVERCLOCK_COST);
         AbilityButton btn2 = new AbilityButton(2, "TIME FREEZE", GameConfig.FREEZE_COST);
         AbilityButton btn3 = new AbilityButton(3, "TAC NUKE", GameConfig.NUKE_COST);
@@ -78,68 +77,56 @@ public class PlayingState implements GameState {
     
         uiElements.add(btn1); uiElements.add(btn2); uiElements.add(btn3); uiElements.add(speedBtn);
         
-        // 7. Unit Selection Menu
         createUnitMenu(world);
         GameRNG.randomize();
+
+        // Start the level with a big tutorial cinematic
+        world.getGSM().pushState(new BossCinematicState(levelConfig.title + "\n" + levelConfig.tutorialText, 180));
     }
 
     @Override
     public void update(MyWorld world) {
         String key = Greenfoot.getKey();
-        // Run game logic
         waveManager.update(world);
         placementManager.update(world);
         AbilityManager.update(world);
-        
         CalamityManager.update(world, waveManager.getWaveNumber(), key);
 
-        // Update UI displays
-        waveDisplay.setText("WAVE: " + waveManager.getWaveNumber() + " | LIVES: " + base.lives);
+        waveDisplay.setText("WAVE: " + waveManager.getWaveNumber() + " / " + levelConfig.maxWaves + " | LIVES: " + base.lives);
         goldDisplay.setText("GOLD: " + CurrencyManager.getGold());
  
-        if (GameConfig.KEY_SHOP.equals(key)) {
-            world.getGSM().pushState(new ShopState());
-            return; // Stop processing this frame so we don't click things 'through' the shop
-        }
-        // If Base dies, Game Over
         if (base.lives <= 0) {
-            world.getGSM().changeState(new GameOverState());
+            world.getGSM().changeState(new GameOverState(levelId)); // Pass levelId to Game Over
         }
     }
     
     @Override
     public void exit(MyWorld world) {
-        long playedMs = System.currentTimeMillis() - sessionStartTime;
-        SaveManager.addInt("total_playtime", (int)(playedMs / 1000));
-        ScoreManager.updateHighScore();
-
         world.removeObjects(uiElements);
         uiElements.clear();
     }
     
     private void createUnitMenu(MyWorld world) {
         UIScrollManager.reset();
+        int visibleCount = 0;
 
-        // Create the cards at their "Home" positions
         for (int i = 0; i < UnitRegistry.roster.size(); i++) {
             UnitRegistry.UnitData data = UnitRegistry.roster.get(i);
             
-            // HomeY starts at Top Limit and moves down
-            int homeY = GameConfig.MENU_TOP_LIMIT + (i * GameConfig.MENU_CARD_SPACING);
+            // Only spawn the card if the CampaignManager says it's allowed in this level!
+            if (!levelConfig.allowedUnits.contains(data.id)) continue;
             
-            UIUnitCard card = new UIUnitCard(
-                data.id, data.cost, data.color, data.key, placementManager, homeY
-            );
+            int homeY = GameConfig.MENU_TOP_LIMIT + (visibleCount * GameConfig.MENU_CARD_SPACING);
+            UIUnitCard card = new UIUnitCard(data.id, data.cost, data.color, data.key, placementManager, homeY);
             world.addObject(card, GameConfig.MENU_X, homeY);
             uiElements.add(card);
+            
+            // Auto-select the first allowed unit
+            if (visibleCount == 0) placementManager.setSelectedUnit(data.id);
+            visibleCount++;
         }
     }
         
-    public int getWaveNumber() {
-        return waveManager.getWaveNumber();
-    }
-    
-    public WaveManager getWaveManager() {
-        return waveManager;
-    }
+    public int getWaveNumber() { return waveManager.getWaveNumber(); }
+    public WaveManager getWaveManager() { return waveManager; }
 }

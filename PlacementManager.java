@@ -71,33 +71,21 @@ public class PlacementManager {
         world.addObject(previewActor, 0, 0);
     }
 
-     private void attemptPlacement(MyWorld world, int x, int y) {
+        private void attemptPlacement(MyWorld world, int x, int y) {
         int col = LaneManager.colFromX(x);
         int lane = LaneManager.laneFromY(y);
         
-        // 1. Safety check
         if (col == -1 || lane == -1) return; 
     
+        // If unit exists, you cannot place here or upgrade! Just return.
         Unit existingUnit = LaneManager.getUnitAt(lane, col);
-        UnitRegistry.UnitData data = UnitRegistry.getById(selectedUnit);
-        
-        // BASIC UNIT STACKING LOGIC
-        if (selectedUnit == 1 && existingUnit instanceof BasicUnit) {
-            int existingLevel = existingUnit.getLevel();
-            int scaledStackCost = (int)(data.cost * Math.pow(GameConfig.PLACEMENT_COST_MULT, existingLevel - 1));
-       
-            if (CurrencyManager.spend(scaledStackCost * CalamityManager.getPriceMultiplier())) {
-                ((BasicUnit)existingUnit).addStack();
-            }
-            return;
-        }
-        
         if (existingUnit != null) return; 
         
-        // --- FIXED: PLACEMENT EXPONENTIAL COST ---
-        // Exactly matches the math in UIUnitCard.java
-        int scaledPlacementCost = (int)(data.cost * Math.pow(GameConfig.PLACEMENT_COST_MULT, data.level - 1)); 
-        int finalCost = scaledPlacementCost * CalamityManager.getPriceMultiplier();
+        UnitRegistry.UnitData data = UnitRegistry.getById(selectedUnit);
+        
+        // Placement cost scales lightly based on your global tech level
+        int scaledCost = (int)(data.cost * Math.pow(GameConfig.PLACEMENT_COST_MULT, data.level - 1)); 
+        int finalCost = scaledCost * CalamityManager.getPriceMultiplier();
         
         if (CurrencyManager.spend(finalCost)) {
             Unit u = data.spawner.create(lane, col);

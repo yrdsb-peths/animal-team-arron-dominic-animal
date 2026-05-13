@@ -1,5 +1,4 @@
 import greenfoot.*;
-import java.util.List;
 
 public class UpgradeCard extends Actor {
     private UnitRegistry.UnitData data;
@@ -12,40 +11,28 @@ public class UpgradeCard extends Actor {
     public void act() {
         if (Greenfoot.mouseClicked(this)) {
             int cost = getUpgradeCost();
-            if (data.level < GameConfig.MAX_UNIT_LEVEL && CurrencyManager.spend(cost)) {
+            if (data.level < GameConfig.MAX_UNIT_LEVEL && SaveManager.spendTechPoints(cost)) {
                 data.level++;
-                applyGlobalUpgrade();
+                SaveManager.setInt("unit_lvl_" + data.id, data.level);
+                SaveManager.save();
+                
+                MyWorld world = (MyWorld)getWorld();
+                world.addObject(new FloatingText("TECH UPGRADED!", Color.YELLOW, 40), world.getWidth()/2, GameConfig.s(100));
                 updateImage();
             }
         }
     }
    
     private int getUpgradeCost() {
-        // 1. Calculate the raw exponential cost as we did before
-        double exponentialCurve = Math.pow(GameConfig.UPGRADE_COST_EXP_MULT, data.level - 1);
-        long rawCost = (long)(data.cost * GameConfig.UPGRADE_COST_BASE_MULT * exponentialCurve);
-        
-        // 2. PIN IT DOWN: Use Math.min to ensure it never crosses the cap
-        int finalCost = (int)Math.min(rawCost, GameConfig.MAX_RESEARCH_COST);
-        
-        return finalCost;
+        if (data.level >= GameConfig.MAX_UNIT_LEVEL) return 0;
+        return GameConfig.TECH_UPGRADE_COSTS[data.level];
     }
 
-    private void applyGlobalUpgrade() {
-        MyWorld world = (MyWorld)getWorld();
-        
-        // DELETED the loop that upgrades existing units!
-        // Tech upgrades now ONLY apply to future placements from the PlacementManager.
-        
-        world.addObject(new FloatingText("TECH RESEARCHED!", Color.YELLOW, 40), world.getWidth()/2, GameConfig.s(100));
-    }
-    
     private void updateImage() {
         int w = GameConfig.SHOP_CARD_WIDTH;
         int h = GameConfig.SHOP_CARD_HEIGHT;
         GreenfootImage img = new GreenfootImage(w, h);
         
-        // 1. Background & Border
         img.setColor(new Color(25, 25, 35));
         img.fill();
         img.setColor(UnitVisuals.getLevelColor(data.level));
@@ -58,7 +45,6 @@ public class UpgradeCard extends Actor {
         int iconY = 30; 
         img.drawImage(unitIcon, iconX, iconY);
         
-        // 3. Text Info
         img.setColor(Color.WHITE);
         img.setFont(new Font("SansSerif", true, false, 16));
         String name = data.unitClass.getSimpleName().replace("Unit", "");
@@ -69,32 +55,7 @@ public class UpgradeCard extends Actor {
         
         if (data.level < GameConfig.MAX_UNIT_LEVEL) {
             img.setColor(new Color(100, 255, 100));
-            String priceText = GameConfig.formatNumber(getUpgradeCost());
-            img.drawString("Upgrade: $" + priceText, 15, h/2 + 65);
-            
-            // --- DEBUG MODE: SHOW NEXT LEVEL STATS ON THE CARD ---
-            if (GameConfig.DEBUG_MODE) {
-                img.setFont(new Font("Courier New", false, false, 11));
-                img.setColor(Color.LIGHT_GRAY);
-                
-                int nextLvl = data.level + 1;
-                int nextHP = (int)(dummy.getMaxHealth() / Math.pow(GameConfig.LEVEL_HP_MULT, data.level - 1) * Math.pow(GameConfig.LEVEL_HP_MULT, nextLvl - 1));
-                
-                // We fake the damage config fetch based on class name for debugging
-                int baseDmg = 0;
-                if (name.equals("Basic")) baseDmg = GameConfig.BASIC_UNIT_DAMAGE;
-                if (name.equals("Sniper")) baseDmg = GameConfig.SNIPER_UNIT_DAMAGE;
-                if (name.equals("Railgun")) baseDmg = GameConfig.RAILGUN_UNIT_DAMAGE;
-                if (name.equals("Alchemist")) baseDmg = GameConfig.ALCHEMIST_UNIT_DAMAGE;
-                
-                int nextDmg = (int)(baseDmg * Math.pow(GameConfig.LEVEL_DMG_MULT, nextLvl - 1));
-                
-                if (baseDmg > 0) {
-                    img.drawString("Nxt-> HP:" + nextHP + " DMG:" + nextDmg, 5, h - 8);
-                } else {
-                    img.drawString("Nxt-> HP:" + nextHP, 5, h - 8);
-                }
-            }
+            img.drawString("Cost: " + getUpgradeCost() + " TP", 15, h/2 + 65);
         } else {
             img.setColor(new Color(255, 215, 0));
             img.drawString("MAX TECH", 15, h/2 + 70);

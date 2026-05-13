@@ -8,15 +8,12 @@ public class ShopState implements GameState {
 
     @Override
     public void enter(MyWorld world) {
-        // 1. Add the Opaque Curtain first
         curtain = new ShopBackground();
         world.addObject(curtain, world.getWidth()/2, world.getHeight()/2);
 
-        // 2. Add Title
         addUI(world, new UIText("TECH RESEARCH LAB", 40, Color.CYAN), world.getWidth()/2, GameConfig.s(60));
-        addUI(world, new UIText("Gold: $" + CurrencyManager.getGold(), 24, Color.YELLOW), world.getWidth()/2, GameConfig.s(100));
+        addUI(world, new UIText("Tech Points: " + SaveManager.getTechPoints(), 24, Color.YELLOW), world.getWidth()/2, GameConfig.s(100));
 
-        // 3. Grid of Cards
         for (int i = 0; i < UnitRegistry.roster.size(); i++) {
             UnitRegistry.UnitData data = UnitRegistry.roster.get(i);
             UpgradeCard card = new UpgradeCard(data);
@@ -25,20 +22,19 @@ public class ShopState implements GameState {
             addUI(world, card, x, y);
         }
 
-        addUI(world, new UIText("[ PRESS '" + GameConfig.KEY_SHOP.toUpperCase() + "' TO RESUME ]", 20, Color.WHITE), world.getWidth()/2, world.getHeight() - GameConfig.s(40));
+        addUI(world, new UIText("[ PRESS 'T' TO RESUME ]", 20, Color.WHITE), world.getWidth()/2, world.getHeight() - GameConfig.s(40));
     }
 
     @Override
     public void update(MyWorld world) {
-        // Use getKey to prevent flickering
         String key = Greenfoot.getKey();
-        if (GameConfig.KEY_SHOP.equals(key)) {
+        if ("t".equals(key) || "escape".equals(key)) {
             world.getGSM().popState();
         }
         
-        // Update gold display (Index 1 in our UI list)
+        // Update Tech Points display
         if (ui.size() > 1) {
-            ((UIText)ui.get(1)).setText("Gold: $" + CurrencyManager.getGold());
+            ((UIText)ui.get(1)).setText("Tech Points: " + SaveManager.getTechPoints());
         }
     }
 
@@ -47,8 +43,6 @@ public class ShopState implements GameState {
         world.removeObject(curtain);
         world.removeObjects(ui);
         ui.clear();
-        
-        // Force world repaint to clear the curtain immediately
         world.repaint();
     }
 

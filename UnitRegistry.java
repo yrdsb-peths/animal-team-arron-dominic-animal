@@ -55,9 +55,11 @@ public class UnitRegistry {
         return roster.get(0);
     }
 
-    public static void resetLevels() {
+    public static void loadLevels() {
         for (UnitData d : roster) {
-            d.level = 1;
+            // Read permanent tech level from disk, default to 1
+            d.level = SaveManager.getInt("unit_lvl_" + d.id); 
+            if (d.level == 0) d.level = 1; // Failsafe
         }
     }
 }

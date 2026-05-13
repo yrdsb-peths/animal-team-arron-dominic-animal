@@ -80,5 +80,23 @@ public class SaveManager {
     public static boolean hasUsername() {
         return stats.containsKey("username");
     }
+    
+    public static int getTechPoints() { 
+        return getInt("tech_points"); 
+    }
+    
+    public static void addTechPoints(int amount) { 
+        addInt("tech_points", amount); 
+        save();
+    }
+    
+    public static boolean spendTechPoints(int amount) {
+        if (getTechPoints() >= amount) {
+            addInt("tech_points", -amount);
+            save();
+            return true;
+        }
+        return false;
+    }
         
 }
