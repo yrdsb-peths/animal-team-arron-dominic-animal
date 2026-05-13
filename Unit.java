@@ -17,14 +17,12 @@ public abstract class Unit extends Actor {
     protected GameTimer attackCooldown;
     
     protected int level = 1;
-
-
+        
     public Unit(int health, int laneIndex, int colIndex, double cooldownSeconds) {
-        // 1. Set Level from Registry
-        UnitRegistry.UnitData data = UnitRegistry.getByClass(this.getClass());
+        // 1. Set Level from Registry (This reads the permanent level!)
         this.level = UnitRegistry.getByClass(this.getClass()).level;
     
-        // 2. Scale Stats
+        // 2. Scale Stats cleanly based on the flat multiplier
         this.maxHealth = (int)(health * Math.pow(GameConfig.LEVEL_HP_MULT, level - 1));
         this.health = maxHealth;
         this.laneIndex = laneIndex;

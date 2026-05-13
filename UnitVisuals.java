@@ -343,7 +343,7 @@ public class UnitVisuals {
         }
 
         // 6. LEVEL 4+ IONIC COOLING (Frost Vapor)
-        if (level >= 4) {
+        if (level >= 3) {
             g2.setColor(coldCyan);
             g2.setStroke(new java.awt.BasicStroke(1.5f));
             // Draw "Cooling Pipes" along the top/bottom
@@ -355,11 +355,9 @@ public class UnitVisuals {
             g2.fillRect(drawX + 10 + chassisWidth, center - 5, barrelLen, 10);
         }
         
-        if(level >= 5)
+        if(level >= 4)
         {
-            // ==========================================
-            // LEVEL 5: THE OMEGA RAIL (ZERO-POINT PLATFORM)
-            // ==========================================
+
             
             // 1. FLOATING REAR ANCHORS (Mag-Lev Fins)
             g2.setColor(obsidian);
@@ -475,19 +473,10 @@ public class UnitVisuals {
                 g2.drawOval(center + 10 + jitter, center - 5 - shake, 8, 8); // Gauge Needle
             }
 
-            // 4. PRESSURIZED TUBES (Level 4)
-            if (level >= 4) {
-                g2.setColor(brass);
-                g2.fillRect(center - 22 + jitter, center - 5 - shake, 6, 20); // Left Tank
-                g2.fillRect(center + 16 + jitter, center - 5 - shake, 6, 20); // Right Tank
-                g2.setColor(acidGreen);
-                g2.setStroke(new java.awt.BasicStroke(2f));
-                g2.drawArc(center - 20, center - 15, 40, 20, 0, 180); // Connecting Tube
-            }
         } 
-        if (level == 5) {
+        if (level == 4) {
                     // ======================================================
-                    // LEVEL 5: THE OMEGA ISOTOPE CHASSIS
+                    // LEVEL 4: THE OMEGA ISOTOPE CHASSIS
                     // ======================================================
                     long t = System.currentTimeMillis();
 
@@ -553,7 +542,7 @@ public class UnitVisuals {
         int shakeX = Greenfoot.getRandomNumber(3) - 1;
         int shakeY = Greenfoot.getRandomNumber(3) - 1;
     
-        if (level < 5) {
+        if (level < 4) {
             // ======================================================
             // LVL 1-4: OG HELMET DESIGN (Yellow Head -> Iron -> Spike -> Shield)
             // ======================================================
@@ -572,7 +561,7 @@ public class UnitVisuals {
             }
         } else {
             // ======================================================
-            // LEVEL 5: THE OMEGA CIRCUS BUNKER (Dynamic Eyes)
+            // LEVEL 4: THE OMEGA CIRCUS BUNKER (Dynamic Eyes)
             // ======================================================
             // 1. THE BUNKER (Sleek dark iron)
             img.setColor(new Color(85, 85, 105));

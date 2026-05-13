@@ -31,8 +31,8 @@ public class DamagePuddle extends Actor {
         GreenfootImage img = new GreenfootImage(size, size);
         long t = System.currentTimeMillis();
 
-        if (level < 5) {
-            // --- YOUR ORIGINAL BUBBLE BLOB (LVL 1-4) ---
+        if (level < 4) {
+            // --- YOUR ORIGINAL BUBBLE BLOB (LVL 1-3) ---
             java.awt.Graphics2D g2 = img.getAwtImage().createGraphics();
             g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
             
@@ -51,7 +51,7 @@ public class DamagePuddle extends Actor {
             }
             g2.dispose();
         } else {
-            // --- THE MELTDOWN ZONE (LVL 5) ---
+            // --- THE MELTDOWN ZONE (LVL 4) ---
             img.setColor(new Color(0, 60, 20, 200));
             img.fillOval(5, 5, size-10, size-10);
             int pulse = (int)(Math.abs(Math.sin(t / 200.0)) * 100) + 100;

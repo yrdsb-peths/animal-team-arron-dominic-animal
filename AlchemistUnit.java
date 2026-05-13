@@ -27,7 +27,7 @@ public class AlchemistUnit extends Unit {
         // 2. THE FIX: Update visuals ALWAYS for Level 5
         // We do this every frame (or every 2nd frame) so the orbits and plasma 
         // beam in UnitVisuals.drawAlchemist can actually move.
-        if (level == 5) {
+        if (level == 4) {
             updateVisual(); 
         } 
         // For Lvl 1-4, you might only want to update when attacking to save CPU,

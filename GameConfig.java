@@ -155,7 +155,7 @@ public class GameConfig {
     // BASIC: L2 Swarm, L3 Rage, L5 Domain
     public static final int BASIC_SWARM_UNLOCK   = 2;
     public static final int BASIC_RAGE_UNLOCK    = 3;
-    public static final int BASIC_DOMAIN_UNLOCK  = 5; 
+    public static final int BASIC_DOMAIN_UNLOCK  = 4; 
 
     // SNIPER: L2 Debuff, L3 Enhanced Slow, L5 Ice Statue
     public static final int SNIPER_DEBUFF_UNLOCK    = 2;
@@ -164,16 +164,16 @@ public class GameConfig {
     // ALCHEMIST: L2 Corrosive, L3 Sticky, L5 Contagion
     public static final int ALCHEMIST_CORROSIVE_UNLOCK = 2;
     public static final int ALCHEMIST_STICKY_UNLOCK    = 3;
-    public static final int ALCHEMIST_CONTAGION_UNLOCK = 5; // Moved from 4 to 5
+    public static final int ALCHEMIST_CONTAGION_UNLOCK = 4; 
 
     // RAILGUN: L2 Trail, L5 Ion Cannon
     public static final int RAILGUN_TRAIL_UNLOCK       = 2;
-    public static final int RAILGUN_SUPER_LASER_UNLOCK = 5;
+    public static final int RAILGUN_SUPER_LASER_UNLOCK = 4;
 
   
     // --- WALL UNITS ---
     public static final int WALL_THORNS_UNLOCK         = 2; 
-    public static final int WALL_HEAL_UNLOCK           = 5;    // Auto-heals 3% HP every second
+    public static final int WALL_HEAL_UNLOCK           = 4;    // Auto-heals 3% HP every second
     public static final int WALL_HEALING_AMOUNT        = 3;//%
     public static final int WALL_EXPLODE_UNLOCK        = 3;    // Explodes on death
     public static final float WALL_THORN_MULTIPLIER    = 1.0f; // Reflect 100% of damage
@@ -181,7 +181,7 @@ public class GameConfig {
     
     // --- BIG WALL UNITS ---
     public static final int BIG_WALL_EXPLODE_UNLOCK    = 3;    // Explodes on death
-    public static final int BIG_WALL_IMMUNE_UNLOCK     = 5;    // Immune to Calamities
+    public static final int BIG_WALL_IMMUNE_UNLOCK     = 4;    // Immune to Calamities
     
     // --- COWARD UNIT ---
     public static final int COWARD_GIFT_UNLOCK         = 2;    // Fires burst before hiding

@@ -91,7 +91,7 @@ public class BasicUnit extends Unit {
         
         // THEME: Neon Green identity
         Color theme = new Color(0, 255, 100); 
-        if (level == 5) theme = new Color(150, 255, 150); // Divine White-Green
+        if (level == 4) theme = new Color(150, 255, 150); // Divine White-Green
         if (isRaged) theme = Color.RED;
     
         switch(level) {
@@ -140,40 +140,7 @@ public class BasicUnit extends Unit {
                 }
                 break;
     
-            case 4: // THE GEOMETRIC MATRIX (Lissajous Orbits)
-            // 1. THE CORE: Rotating Wireframe Hexagon
-            //img.setStroke(new java.awt.BasicStroke(2.0f));
-            drawWireframeShape(img, center, center+bob, 18, 6, orbitAngle * 0.5f, theme);
-            
-            // 2. THE LATTICE: Drones move in harmonic "Knot" patterns
-            for (int i = 0; i < stackCount; i++) {
-                double baseA = i * (Math.PI * 2 / stackCount);
-                double t = Math.toRadians(orbitAngle) + baseA;
-
-                // Orbit A: Lissajous Knot (Ratio 3:2) - The "Horizontal Infinity"
-                int x1 = (int)(center + Math.sin(3 * t) * 35);
-                int y1 = (int)(center + Math.cos(2 * t) * 20) + bob;
-
-                // Orbit B: Lissajous Knot (Ratio 1:3) - The "Vertical Clover"
-                int x2 = (int)(center + Math.sin(1 * t) * 15);
-                int y2 = (int)(center + Math.cos(3 * t) * 35) + bob;
-
-                // Draw Drones (Solid Rectangles)
-                img.setColor(theme);
-                img.fillRect(x1-2, y1-2, 5, 5);
-                img.fillRect(x2-2, y2-2, 5, 5);
-
-                // 3. THE CAGE: Connect drones with thin geometric "data lines"
-                // Only connect every 2nd frame for a "digital flicker" look
-                if (orbitAngle % 2 == 0) {
-                    img.setColor(new Color(theme.getRed(), theme.getGreen(), theme.getBlue(), 70));
-                    img.drawLine(x1, y1, x2, y2); // Cross-link the orbits
-                    img.drawLine(center, center+bob, x1, y1); // Link to core
-                }
-            }
-            break;
-    
-            case 5: // THE ULTIMATE: Divine Mandala / Nano-Fortress
+            case 4: // THE ULTIMATE: Divine Mandala / Nano-Fortress
                 // 1. Radiant Aura
                 int pulse = 30 + (int)(Math.sin(Math.toRadians(orbitAngle * 3)) * 10);
                 img.setColor(new Color(255, 255, 255, 40));

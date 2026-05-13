@@ -18,8 +18,8 @@ public class SplashProjectile extends Actor {
     }
 
     private void updateImage() {
-        if (level < 5) {
-            // --- YOUR ORIGINAL BEAKER (LVL 1-4) ---
+        if (level < 4) {
+            // --- YOUR ORIGINAL BEAKER (LVL 1-3) ---
             int size = 25;
             GreenfootImage img = new GreenfootImage(size, size);
             java.awt.Graphics2D g2 = img.getAwtImage().createGraphics();
@@ -36,7 +36,7 @@ public class SplashProjectile extends Actor {
             g2.dispose();
             setImage(img);
         } else {
-            // --- THE OMEGA SINGULARITY (LVL 5) ---
+            // --- THE OMEGA SINGULARITY (LVL 4) ---
             int size = 30;
             GreenfootImage img = new GreenfootImage(size, size);
             long t = System.currentTimeMillis();
