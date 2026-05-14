@@ -292,10 +292,10 @@ public class GameConfig {
     public static final int DROP_ZOMBIE_YETI = 100;
     
     // ZOMBIE YETI SPAWN CHANCES
-    public static final int YETI_WAVE_MIN      = 1;  // Starts appearing wave 7
-    public static final int YETI_CHANCE_START  = 100;  
-    public static final int YETI_CHANCE_GROWTH = 100;
-    public static final int YETI_CHANCE_MAX    = 100;
+    public static final int YETI_WAVE_MIN      = 7;  // Starts appearing wave 7
+    public static final int YETI_CHANCE_START  = 2;  
+    public static final int YETI_CHANCE_GROWTH = 1;
+    public static final int YETI_CHANCE_MAX    = 10;
     
     // ── SLIME SPLIT MULTIPLIERS ──
     public static final int SLIME_SPLIT_COUNT = 5;      // 1 Big Slime -> 3 Minis

@@ -114,6 +114,22 @@ public class ZombieYetiEnemy extends Enemy {
         if (currentArray != null && currentArray.length > 0) {
             animIndex = (animIndex + 1) % currentArray.length;
             setImage(currentArray[animIndex]);
+            
+            // --- NEW: STEPPING MOVEMENT LOGIC ---
+            if (currentState == State.MOVE) {
+                // Move only on EVEN frames to simulate "taking a step" then pausing.
+                // If you want him to step on every frame instead, remove the "if (animIndex % 2 == 0)" check.
+                if (animIndex % 2 == 0) {
+                    
+                    // Because we are only moving every 2nd animation frame (and the animation ticks
+                    // every 0.1s or 6 game frames), we must multiply the normal speed by 12 
+                    // so he maintains the correct overall speed and doesn't fall behind.
+                    double burstMove = baseSpeed * speedMultiplier * GameConfig.GAME_SPEED * 36.0;
+                    
+                    this.exactX -= burstMove;
+                    super.setLocation((int)this.exactX, (int)this.exactY);
+                }
+            }
         }
     }
 
@@ -149,5 +165,12 @@ public class ZombieYetiEnemy extends Enemy {
             // Failsafe in case Die frames failed to load
             world.removeObject(this); 
         }
+    }
+    
+    @Override
+    protected void performMovement() {
+        // Intentionally left blank!
+        // We are cancelling the default smooth glide.
+        // Movement will now be handled by advanceAnimation() instead.
     }
 }
