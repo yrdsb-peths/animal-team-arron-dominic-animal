@@ -295,7 +295,7 @@ public class GameConfig {
     public static final int YETI_WAVE_MIN      = 7;  // Starts appearing wave 7
     public static final int YETI_CHANCE_START  = 2;  
     public static final int YETI_CHANCE_GROWTH = 1;
-    public static final int YETI_CHANCE_MAX    = 10;
+    public static final int YETI_CHANCE_MAX    = 20;
     
     // ── SLIME SPLIT MULTIPLIERS ──
     public static final int SLIME_SPLIT_COUNT = 5;      // 1 Big Slime -> 3 Minis
@@ -336,7 +336,7 @@ public class GameConfig {
     public static final int TANK_WAVE_MIN      = 2;
     public static final int TANK_CHANCE_START  = 5;
     public static final int TANK_CHANCE_GROWTH = 3;
-    public static final int TANK_CHANCE_MAX    = 30;
+    public static final int TANK_CHANCE_MAX    = 20;
 
     // SHIELD BEARER (Counters Snipers)
     public static final int SHIELD_WAVE_MIN      = 4;     // Starts appearing wave 4
