@@ -284,6 +284,19 @@ public class GameConfig {
     public static final float MINISLIME_ENEMY_SPEED = 1.8f; // Fast!
     public static final double MINISLIME_ENEMY_ATK_COOLDOWN = 1.0;
     
+    // ZOMBIE YETI (Tanky, slow, drops frost particles)
+    public static final int ZOMBIE_YETI_HP = 1500;
+    public static final int ZOMBIE_YETI_DAMAGE = 4;
+    public static final float ZOMBIE_YETI_SPEED = 0.4f; 
+    public static final double ZOMBIE_YETI_ATK_COOLDOWN = 3.0;
+    public static final int DROP_ZOMBIE_YETI = 100;
+    
+    // ZOMBIE YETI SPAWN CHANCES
+    public static final int YETI_WAVE_MIN      = 7;  // Starts appearing wave 7
+    public static final int YETI_CHANCE_START  = 2;  
+    public static final int YETI_CHANCE_GROWTH = 1;
+    public static final int YETI_CHANCE_MAX    = 15;
+    
     // ── SLIME SPLIT MULTIPLIERS ──
     public static final int SLIME_SPLIT_COUNT = 5;      // 1 Big Slime -> 3 Minis
     public static final int MINISLIME_SPLIT_COUNT = 3;  // 1 Mini Slime -> 2 Micros
