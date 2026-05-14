@@ -138,6 +138,7 @@ public class WaveManager {
             int slimeChance   = (waveNum >= GameConfig.SLIME_WAVE_MIN)   ? Math.min(GameConfig.SLIME_CHANCE_MAX, GameConfig.SLIME_CHANCE_START + (waveNum * GameConfig.SLIME_CHANCE_GROWTH)) : -1;
             int shieldChance  = (waveNum >= GameConfig.SHIELD_WAVE_MIN)  ? Math.min(GameConfig.SHIELD_CHANCE_MAX, GameConfig.SHIELD_CHANCE_START + (waveNum * GameConfig.SHIELD_CHANCE_GROWTH)) : -1;
             int KAMIKAZEChance = (waveNum >= GameConfig.KAMIKAZE_WAVE_MIN) ? Math.min(GameConfig.KAMIKAZE_CHANCE_MAX, GameConfig.KAMIKAZE_CHANCE_START + (waveNum * GameConfig.KAMIKAZE_CHANCE_GROWTH)) : -1;
+            int yetiChance    = (waveNum >= GameConfig.YETI_WAVE_MIN)    ? Math.min(GameConfig.YETI_CHANCE_MAX, GameConfig.YETI_CHANCE_START + (waveNum * GameConfig.YETI_CHANCE_GROWTH)) : -1;
 
             // ONE CHAIN TO RULE THEM ALL
             // If you set SLIME_CHANCE_START to 100, the first 'if' will always trigger,
@@ -145,6 +146,9 @@ public class WaveManager {
             if (slimeChance > 0 && roll < slimeChance) {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.SLIME, lane));
             } 
+            else if (yetiChance > 0 && roll < yetiChance) { // <--- ADD THIS BLOCK
+            spawnQueue.add(new EnemySpawn(EnemySpawn.ZOMBIE_YETI, lane));
+            }
             else if (shieldChance > 0 && roll < shieldChance) {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.SHIELD, lane));
             } 
@@ -154,6 +158,7 @@ public class WaveManager {
             else if (tankChance > 0 && roll < tankChance) {
                 spawnQueue.add(new EnemySpawn(EnemySpawn.TANK, lane));
             } 
+            
             else {
                 // If nothing else rolls successfully, it's a Basic Enemy
                 spawnQueue.add(new EnemySpawn(EnemySpawn.BASIC, lane));
@@ -321,6 +326,7 @@ public class WaveManager {
         public static final int SLIME = 5;
         public static final int HEAVY_SHIELD = 6;
         public static final int RUMBLING_MIX = 99;
+        public static final int ZOMBIE_YETI = 7;
 
         public final int type;
         public final int lane;
@@ -347,6 +353,7 @@ public class WaveManager {
                 case KAMIKAZE:     e = new KamikazeEnemy(); break; 
                 case SLIME:        e = new SlimeEnemy(); break;
                 case HEAVY_SHIELD: e = new HeavyShieldEnemy(); break;
+                case ZOMBIE_YETI:  e = new ZombieYetiEnemy(); break;
                 default:           e = new BasicEnemy(); break; 
             }
             
