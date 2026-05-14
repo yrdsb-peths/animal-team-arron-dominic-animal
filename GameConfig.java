@@ -285,7 +285,7 @@ public class GameConfig {
     public static final double MINISLIME_ENEMY_ATK_COOLDOWN = 1.0;
     
     // ZOMBIE YETI (Tanky, slow, drops frost particles)
-    public static final int ZOMBIE_YETI_HP = 1500;
+    public static final int ZOMBIE_YETI_HP = 5000;
     public static final int ZOMBIE_YETI_DAMAGE = 4;
     public static final float ZOMBIE_YETI_SPEED = 0.4f; 
     public static final double ZOMBIE_YETI_ATK_COOLDOWN = 3.0;

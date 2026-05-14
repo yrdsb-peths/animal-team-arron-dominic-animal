@@ -14,13 +14,16 @@ public class SlowEffect implements StatusEffect {
         this.id = "slow"; 
     }
 
-    @Override
+       @Override
     public void update(Enemy enemy) {
         enemy.speedMultiplier *= slowMultiplier;
         enemy.damageDealtMultiplier *= dmgDealtMultiplier; // Apply weakness!
         
-        enemy.getImage().setColor(Color.BLUE);
-        enemy.getImage().fillOval(0, 0, enemy.getImage().getWidth(), enemy.getImage().getHeight());
+        // Prevent the crude blue circle from ruining the Yeti's sprite!
+        if (!(enemy instanceof ZombieYetiEnemy)) {
+            enemy.getImage().setColor(Color.BLUE);
+            enemy.getImage().fillOval(0, 0, enemy.getImage().getWidth(), enemy.getImage().getHeight());
+        }
     
         durationTimer.update((MyWorld) enemy.getWorld());
     }
